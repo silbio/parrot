@@ -1,0 +1,67 @@
+
+h1 {
+    text-align: center;
+}
+
+.field {
+    margin: 10px;
+}
+
+
+.title {
+    margin: 10px 0 20px 10px
+}
+
+#error-message {
+    display: block;
+    margin: 10px;
+    font-size: large;
+    max-width: fit-content;
+}
+
+#navAides {
+    display: block;
+    width: 100%;
+}
+
+#navAides a {
+    text-align: right;
+    margin: 0 20px;
+}
+
+#mainPage {
+    display: flex;
+    flex-direction: column;
+}
+
+td {
+    border: 1px solid black;
+
+}
+
+td.large {
+    width: 32%;
+}
+
+td.small {
+    width: 2%;
+    text-align: center;
+    background: grey;
+    border-radius: 3px;
+}
+
+td.small:hover {
+    background: lightgray;
+}
+
+td.small:active {
+    background: yellow;
+}
+
+select {
+    width: 100%;
+}
+
+#moreRows {
+    width: fit-content;
+}
