@@ -6,8 +6,7 @@ module.exports = {
     run(pageId, provincePath, procedureName, userAgentString) {
         return new Promise(async (mainResolve, mainReject)=>{
             let context = await browser.createIncognitoBrowserContext();
-            let page = await context.newPage();
-            pages[pageId].page =  page;
+            pages[pageId].page =  await context.newPage();
             pages[pageId].har = new PuppeteerHar(pages[pageId].page);
             await pages[pageId].har.start({path: './logs/hars/' + utils.getTimeStampInLocaLIso() + '_' + pageId + '_.har'});
             logger.info('pageId ' + pageId + ' assigned to ' + provincePath + ' - ' + procedureName);
@@ -58,7 +57,6 @@ module.exports = {
                     request.continue();
                 }
             });
-            //await pages[pageId].page.goto('https://i-know-you-faked-user-agent.glitch.me/new-window');
             await pages[pageId].page.goto('https://sede.administracionespublicas.gob.es'+ provincePath);
 
             new Promise(((stagesResolve, stagesReject) => {

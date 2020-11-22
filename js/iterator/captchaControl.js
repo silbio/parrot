@@ -60,12 +60,10 @@ module.exports = {
                                 resolve(resolvedCaptchas[pageId]);
 
                             }).catch((err) => {
-                                pages[pageId].page.close();
-                                reject({message: err, reset: true});
+                                reject(err);
 
                             });
                         } else if (errorId) {
-                            pages[pageId].page.close();
                             reject({
                                 message: `${errorId} - 
                         ${response.data.errorCode} -  
@@ -107,14 +105,17 @@ module.exports = {
         });
     },
     reportIncorrect(pageId) {
-        axios.post('https://api.anti-captcha.com/reportIncorrectRecaptcha', {
-            'clientKey': antiCaptchaClientKey,
-            'taskId': pages[pageId].taskId
-        })
-            .then((response) => {
-                logger.info('ReCaptcha failure reported with result: ' + JSON.stringify(response.data));
-            });
-
+        if(pages[pageId].taskId)  {
+            axios.post('https://api.anti-captcha.com/reportIncorrectRecaptcha', {
+                'clientKey': antiCaptchaClientKey,
+                'taskId': pages[pageId].taskId
+            })
+                .then((response) => {
+                    logger.info('ReCaptcha failure reported with result: ' + JSON.stringify(response.data));
+                });
+        }else{
+            logger.info('Reporting incorrect captcha without taskId');
+        }
     },
 
 }

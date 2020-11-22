@@ -1,6 +1,6 @@
 const path = require('path');
 const utils = require('./utils');
-utils.connectVpn().then(()=>{
+utils.connectVpn().then(() => {
     process.on('exit', () => {
         utils.disconnectVpn().then((result) => {
             logger.info(result);
@@ -8,7 +8,7 @@ utils.connectVpn().then(()=>{
             logger.error(err);
         });
     })
-}).catch((err)=>{
+}).catch((err) => {
     logger.error(err);
     process.exit(22);
 })
@@ -47,13 +47,13 @@ logger.level = 'debug';
 
 // Fetch and parser
 const parser = require('node-html-parser');
-const fetch = require('node-fetch');
+const axios = require('axios');
 
 // Express
 
 const express = require('express');
 const app = express();
-const staticRoot = __dirname + '/../html';
+const staticRoot = __dirname + '/../public';
 app.use(express.static(staticRoot));
 app.use('/healthcheck', require('express-healthcheck')());
 
@@ -104,27 +104,22 @@ passport.serializeUser(UserDetails.serializeUser());
 passport.deserializeUser(UserDetails.deserializeUser());
 
 // App modules
-let rowStatus = {};
-const iterator = require('./iterator');
-let pollingIdleTimer = 0;
-setInterval(() => {
-    if (pollingIdleTimer > 30) {
-        for (let rowId in rowStatus) {
-            iterator.stop(rowId);
-            delete rowStatus[rowId];
-            pollingIdleTimer = 0;
-        }
-    }
-    pollingIdleTimer++;
-}, 1000);
-iterator.init();
 
+const iterator = require('./iterator');
+iterator.init();
 
 
 // ROUTES
 //User management routes
 const connectEnsureLogin = require('connect-ensure-login');
 
+//Public routes
+app.get('/', (req, res) => {
+    res.sendFile('html/index.html', {root: staticRoot})
+});
+app.get('/login', (req, res) => {
+    res.sendFile('html/login.html', {root: staticRoot})
+});
 app.post('/login', (req, res, next) => {
     passport.authenticate('local',
         (err, user, info) => {
@@ -145,137 +140,120 @@ app.post('/login', (req, res, next) => {
                     return next(err);
                 }
 
-                return res.redirect('/dashboard');
+                return res.redirect('/controls');
             });
 
         })(req, res, next);
 });
 
-app.get('/login',
-    (req, res) => res.sendFile('login.html', {root: staticRoot}
-        )
-);
-app.get('/',
-    //connectEnsureLogin.ensureLoggedIn(),
-    (req, res) => {
-        res.sendFile('index.html', {root: staticRoot})
-    }
-);
-app.get('/dashboard',
-    //connectEnsureLogin.ensureLoggedIn(),
-    (req, res) => {
-        res.sendFile('dashboard.html', {root: staticRoot})
-    }
-);
+//Private routes
+app.get('/controls', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
+    res.sendFile('html/controls.html', {root: staticRoot})
+});
+app.get('/private', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
+    res.sendFile('html/private.html', {root: staticRoot})
+});
+app.post('/changePassword', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
+    let oldPassword = req.body.oldPassword;
+    let newPassword = req.body.newPassword;
+    let passwordValidation = req.body.passwordValidate;
+    if (oldPassword === newPassword) {
+        res.redirect('/private?info=samePassword')
+    } else if (newPassword === passwordValidation) {
 
-app.get('/private',
-    //connectEnsureLogin.ensureLoggedIn(),
-    (req, res) => {
-        res.sendFile('private.html', {root: staticRoot})
-    }
-);
-app.post('/changePassword',
-    //connectEnsureLogin.ensureLoggedIn(),
-    (req, res) => {
-        let oldPassword = req.body.oldPassword;
-        let newPassword = req.body.newPassword;
-        let passwordValidation = req.body.passwordValidate;
-        if (oldPassword === newPassword) {
-            res.redirect('/private?info=samePassword')
-        } else if (newPassword === passwordValidation) {
-
-            let userName = req.session.passport.user;
-            UserDetails.findOne({username: userName}, (err, userDetails) => {
-                userDetails.changePassword(oldPassword, newPassword).then(() => {
-                    res.redirect('/private?info=success',)
-                }).catch((err) => {
-                    res.redirect('/private?info=oldPasswordFail')
-                })
+        let userName = req.session.passport.user;
+        UserDetails.findOne({username: userName}, (err, userDetails) => {
+            userDetails.changePassword(oldPassword, newPassword).then(() => {
+                res.redirect('/private?info=success',)
+            }).catch((err) => {
+                res.redirect('/private?info=oldPasswordFail')
             })
-        } else {
-            res.redirect('/private?info=noMatch')
-        }
+        })
+    } else {
+        res.redirect('/private?info=noMatch')
     }
-);
-
-app.get('/user',
-    //connectEnsureLogin.ensureLoggedIn(),
-    (req, res) => {
-        res.send({user: req.user});
-
-    }
-);
-
+});
+app.get('/user', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
+    res.send(req.user.username);
+});
 app.get('/logout', (req, res) => {
-    //connectEnsureLogin.ensureLoggedIn();
+    connectEnsureLogin.ensureLoggedIn();
     req.logout();
-    res.redirect('/login');
+    res.redirect('/');
 });
 
 
 //Application Routes
 
-app.get('/getProcedures', (req, res) => {
+app.post('/getProcedures', (req, res) => {
     //connectEnsureLogin.ensureLoggedIn();
-    let path = req.query.province + '&locale=es';
-    logger.debug(path);
-    //TODO => Swap in axios for fetch
-    fetch('https://sede.administracionespublicas.gob.es' + path)
-        .then((fetchResponse) => {
-            fetchResponse.text().then((body) => {
-                body = parser.parse(body);
-                let selectOptions = body.querySelectorAll('option');
-                let optionsStringArray = [];
-                let hasEmptyOptionBeenSet = false;
-                for (let selectOption of selectOptions) {
-                    if (selectOption.getAttribute('value') === '-1') {
-                        if (hasEmptyOptionBeenSet) {
-                            optionsStringArray.push('<option value="-1">-----------------</option>');
-                        } else {
-                            optionsStringArray.push(selectOption.toString());
-                            hasEmptyOptionBeenSet = true;
-                        }
-                    } else {
-                        optionsStringArray.push(selectOption.toString());
-                    }
+    let provincePath = req.body.province + '&locale=es';
+    logger.debug(provincePath);
+    axios.get('https://sede.administracionespublicas.gob.es' + provincePath)
+        .then((proceduresResponse) => {
+
+            let optionsString = '';
+            let procedureLists = proceduresResponse.data.listaDeGrupos;
+            for (let procedureList of procedureLists) {
+                let procedureListName = procedureList.nombre;
+                for (let procedure of procedureList.listaTramites) {
+                    let procedureId = procedure.idTipTramite;
+                    let procedureDescription = procedure.desTramiteLargo
+                    if (procedureId === -1) procedureDescription = '********* ' + procedureListName + ' *********';
+                    optionsString += `<option value="${procedureId}">${procedureDescription}</option>`
                 }
-                let combinedSelect = `<select> ${optionsStringArray.join()}</select>`
-                res.send({options: combinedSelect});
-            });
-        })
+            }
+
+            let combinedSelect = `<select> ${optionsString}</select>`
+            res.send(combinedSelect);
+        });
+
 });
-
-app.get('/iterate', (req, res) => {
-    //connectEnsureLogin.ensureLoggedIn();
-
-    let qsData = req.query;
-    rowStatus[qsData.rowId] = false;
-    iterator.start(qsData.province, qsData.procedure, qsData.rowId).then((iterationResponse) => {
-        logger.info(iterationResponse);
-        if(iterationResponse.rowId) {
-            rowStatus[iterationResponse.rowId] = iterationResponse.offices;
+app.post('/pollStatus', (req, res) => {
+    connectEnsureLogin.ensureLoggedIn();
+    let activePolls = req.body;
+    for (let rowId in activePolls) {
+        if (!activePolls.hasOwnProperty(rowId)) {
+            continue;
         }
-    }).catch((err)=>{
-        logger.error(err);
-    });
-    res.send({iterating: qsData.rowId})
+        let provincePath = activePolls[rowId].provincePath;
+        let procedureCode = activePolls[rowId].procedureCode;
 
-})
+        if (!iterationResults.hasOwnProperty(rowId)) {
+            iterationResults[rowId] = {
+                provincePath: provincePath,
+                procedureCode: procedureCode,
+                finished: false,
+                offices: []
+            }
+            iterator.refresh(provincePath, procedureCode, rowId);
+        }
+        else if(iterationResults.hasOwnProperty(rowId) && iterationResults[rowId].finished){
+            iterationResults[rowId] = {
+                provincePath: provincePath,
+                procedureCode: procedureCode,
+                finished: false,
+                offices: iterationResults[rowId].offices
+            }
+            iterator.refresh(provincePath, procedureCode, rowId);
+        }
+    }
 
-app.get('/stopIteration', (req, res) => {
-    //connectEnsureLogin.ensureLoggedIn();
-    let qsData = req.query;
-    iterator.stop(qsData.rowId);
-    delete rowStatus[qsData.rowId];
-    res.send({msg: 'polling stopped successfully'})
+    //TODO => Check if active polling rows match number of items in the iteration results
+    let iterationResultsKeys = Object.keys(iterationResults)
+    let activePollsKeys = Object.keys(iterationResults)
+    if(iterationResultsKeys.length !== activePollsKeys.length){
+        let difference = iterationResultsKeys.filter(x => !activePollsKeys.includes(x));
+        for(let i = 0; i < difference.length; i++){
+           delete iterationResults[difference[i]];
+        }
+    }
+    res.send(iterationResults);
 
-})
 
-app.get('/pollStatus', (req, res) => {
-    //connectEnsureLogin.ensureLoggedIn();
-    res.send(rowStatus);
-    pollingIdleTimer = 0;
-    //TODO => Check for consistency with currently running alerts.
+
 });
+
+
 
 

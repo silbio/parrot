@@ -53,7 +53,7 @@ module.exports = {
                     }
 
                     if (await pages[pageId].page.$('#txtAutActual') !== null) {
-                        await page.evaluate(() => {
+                        await pages[pageId].page.evaluate(() => {
                             let authSelect = document.getElementById('txtAutActual');
                             let numberOfOptions = authSelect.childElementCount
                             let randomOption = Math.floor(Math.random() * (numberOfOptions - 2) + 2);

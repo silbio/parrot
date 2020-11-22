@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <title> Login </title>
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="../css/styles.css">
 </head>
 
 <body>
@@ -25,15 +25,7 @@
     <label id="error-message"></label>
 </form>
 
-<script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const info = urlParams.get('info');
+<script src="../js/login.js" type="application/javascript"></script>
 
-    if(info) {
-        const errorMessage = document.getElementById("error-message");
-        errorMessage.innerText = info;
-        errorMessage.style.display = "block";
-    }
-</script>
 </body>
 </html>

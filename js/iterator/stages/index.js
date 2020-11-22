@@ -106,11 +106,6 @@ function iterate(pageId, stage, procedureCode = null) {
                 logger.info('HAR File recorded for pageId: ' + pageId);
                 await pages[pageId].har.stop();
 
-                logger.debug('Closing page: ' + pageId);
-                await pages[pageId].page.close().catch((err) => {
-                    logger.error(err);
-                });
-
                 return true;
             }
 
@@ -198,20 +193,12 @@ function iterate(pageId, stage, procedureCode = null) {
                 }
             } else {
 
-                logger.debug('Closing page: ' + pageId);
+                logger.debug('Unsuccessful finish: ' + pageId);
                 if (stage > 4) {
                     logger.info('HAR File recorded for pageId: ' + pageId);
                     await pages[pageId].har.stop();
                 }
-                pageMakerPromises[pageId].reject({
-                    message:
-                        (!successUrlIsValid ? 'Resulting Url for stage ' + stage + ' is not one of ' + successUrls + '. It is ' + pageUrl + ' instead. /n' : '') +
-                        (!matchesStageTraits ? 'Page traits for stage ' + stage + ' do not match success page configuration for session ' + pageId : ''),
-                    reset: true,
-                    stage: stage
-                });
-                pages[pageId].page.close();
-
+                pageMakerPromises[pageId].resolve({offices: []});
             }
 
 
@@ -224,7 +211,6 @@ function iterate(pageId, stage, procedureCode = null) {
                 Error Message: 
                     ${err.message}`,
                 stack: err.stack,
-                reset: (!!(err.reset || err.name === 'TimeoutError')),
                 name: err.name,
                 stage: stage
 
