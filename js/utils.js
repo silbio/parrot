@@ -24,8 +24,8 @@ module.exports = {
     getTimeStampInLocaLIso: () => {
         return (new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000)).toISOString().slice(0, -1)
     },
-    getRandomDate: (min,max)=>{
-        return   new Date(min.getTime() + Math.random() * (max.getTime() - min.getTime())).toJSON().slice(0,10).split('-').reverse().join('/')
+    getRandomDate: (min, max) => {
+        return new Date(min.getTime() + Math.random() * (max.getTime() - min.getTime())).toJSON().slice(0, 10).split('-').reverse().join('/')
     },
     getOptionValueFromInnerText: async (pageId, selectId, textToFind) => {
         const optionWanted = (
@@ -49,6 +49,7 @@ module.exports = {
         }
     },
     connectVpn: () => {
+        //TODO => Test access with VPN randomization
         //IP address randomization over ProtonVPN - Use visudo to allow user to run command as root.
         return new Promise((resolve, reject) => {
             //     let startVPN = exec("sudo protonvpn c -r", function (err, stdout, stderr) {
@@ -87,25 +88,36 @@ module.exports = {
         });
     },
     enableAndClick: (pageId) => {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             pages[pageId].page.evaluate(() => {
+                console.log('Enabling Button! btnEnviar: ' + document.getElementById('btnEnviar') + ' Type of enableBtn: ' + typeof window.enableBtn)
                 if (window.hasOwnProperty('enableBtn')) {
                     window.enableBtn();
                     window.enableBtn = function () {
                         console.log('enableBtn ran');
-                        return true;
+                        setTimeout(function () {
+                            return true;
+                        }, 2000)
+
                     };
                 } else {
+                    console.log('enableBtn not on page.')
                     return true;
                 }
             }).then(async () => {
                 await pages[pageId].page.waitForTimeout(2000);
-                await pages[pageId].page.click('#btnEnviar');
+                await pages[pageId].page.focus('#btnEnviar');
+                await pages[pageId].page.click('#btnEnviar', {clickCount: 3, delay: 1000});
+                await pages[pageId].page.screenshot({
+                    path: 'logs/screenshots/envia-' + pageId + '.png',
+                    fullPage: true
+                });
+                logger.info('Enable and click done!')
                 resolve();
-            }).catch((err) => {
-                reject(err);
             });
-        })
+        }).catch((err) => {
+            reject(err);
+        });
 
     }
 }

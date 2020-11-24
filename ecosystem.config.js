@@ -1,7 +1,7 @@
 module.exports = {
   apps : [{
     name        : "SILB",
-    script      : "./js/main.js",
+    script      : "./js/index.js",
     env: {
       "NODE_ENV": "development",
     },

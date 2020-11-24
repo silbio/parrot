@@ -135,7 +135,7 @@ function iterate(pageId, stage, procedureCode = null) {
                 pages[pageId].isReload = true;
                 if (captchaOptions.siteKey &&
                     !pages[pageId].lastStageHasInvisibleCaptcha) {
-
+//TODO => Figure out why it attempts to report an incorrect captcha when the last stage was invisible
                     captchaControl.reportIncorrect(pageId);
                     await captchaControl.request(pageId, captchaOptions).catch((err) => {
                         logger.error(err);

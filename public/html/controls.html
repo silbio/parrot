@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8"/>
     <title> Home </title>
@@ -7,28 +6,28 @@
 </head>
 
 <body id="mainPage">
-<div id='navAides'><a href="/private">Ajustes</a>
-    <a href="/logout">Salir</a></div>
 
+<span id='navAides'>
+    <span id="welcome-message"></span>
+    <a href="/private">Ajustes</a>
+    <a href="/logout">Salir</a></span>
 <br/>
 
-<h1 id="welcome-message"></h1>
-
-
-<table id="alerts">
-    <thead>
-    <tr>
-        <th>Provincia</th>
-        <th>Trámite</th>
-        <th>Estado</th>
-        <th>+</th>
-        <th>-</th>
-    </tr>
-    </thead>
-    <tbody id="statsTableBody">
-    </tbody>
-</table>
-
+<div id="tableBg">
+    <table id="alerts">
+        <thead>
+        <tr>
+            <th>Provincia</th>
+            <th>Trámite</th>
+            <th>Estado</th>
+            <th>+</th>
+            <th>-</th>
+        </tr>
+        </thead>
+        <tbody id="statsTableBody">
+        </tbody>
+    </table>
+</div>
 
 <script src="../js/controls.js" type="application/javascript"></script>
 </body>

@@ -22,7 +22,7 @@ module.exports = {
 //Document Type radio
                 new Promise(async (formResolve) => {
                     let documentType = randomValues.documentType;
-                    await pages[pageId].page.click(`[name="rdbTipoDoc"][value="${documentType}"]`);
+                    await pages[pageId].page.click(`[name="rdbTipoDoc"][value*="${documentType.toLowerCase()}" i]`);
                     // Document Number field
                     await pages[pageId].page.focus('#txtIdCitado');
                     await pages[pageId].page.click('input[id=txtIdCitado]', {clickCount: 3});

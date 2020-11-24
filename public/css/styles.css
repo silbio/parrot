@@ -1,6 +1,17 @@
+body {
+    background-image: url("../img/silb_background.jpg");
+    background-position: bottom;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
 
-h1 {
+
+h1#mainTitle {
     text-align: center;
+    font-size: 72pt;
+    color: #bada55;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .field {
@@ -20,13 +31,34 @@ h1 {
 }
 
 #navAides {
-    display: block;
+    text-align: right;
+    display: inline;
     width: 100%;
+    max-height: 15vh;
 }
 
 #navAides a {
-    text-align: right;
-    margin: 0 20px;
+    color: white;
+    background: rgba(0, 0, 0, 0.5);
+    font-size: medium;
+    padding: 20px;
+    line-height: 2;
+    float: right;
+    margin: 0 5px;
+}
+
+#mainEntry {
+    color: white;
+    background: black;
+    padding: 1vw;
+    font-size: xx-large;
+    width: 8vw;
+    height: 4vw;
+    text-align: center;
+    line-height: 2;
+    position: fixed;
+    bottom: 50px;
+    left: 45vw;
 }
 
 #mainPage {
@@ -64,4 +96,26 @@ select {
 
 #moreRows {
     width: fit-content;
+}
+
+#loginForm, #changePswForm {
+    background: rgba(255, 255, 255, 0.5);
+    display: inline-block;
+}
+
+#welcome-message {
+    color: white;
+    background: rgba(0, 0, 0, 0.5);
+    font-size: medium;
+    padding: 20px;
+    line-height: 2;
+    display: inline;
+    width: fit-content;
+    float: left;
+    margin: 0 5px;
+}
+
+div#tableBg{
+    background: rgba(255, 255, 255, 0.7);
+    min-height: 80vh;
 }

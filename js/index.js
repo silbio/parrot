@@ -1,4 +1,9 @@
 const path = require('path');
+// App modules
+
+const iterator = require('./iterator');
+iterator.init();
+
 const utils = require('./utils');
 utils.connectVpn().then(() => {
     process.on('exit', () => {
@@ -45,17 +50,20 @@ log4js.configure({
 global.logger = log4js.getLogger();
 logger.level = 'debug';
 
-// Fetch and parser
-const parser = require('node-html-parser');
+
 const axios = require('axios');
 
 // Express
 
 const express = require('express');
+const favicon = require('serve-favicon');
+
 const app = express();
 const staticRoot = __dirname + '/../public';
 app.use(express.static(staticRoot));
 app.use('/healthcheck', require('express-healthcheck')());
+app.use(favicon(staticRoot+ '/img/favicon.ico'));
+
 
 const bodyParser = require('body-parser');
 const expressSession = require('express-session')({
@@ -63,6 +71,8 @@ const expressSession = require('express-session')({
     resave: false,
     saveUninitialized: false
 });
+
+
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
@@ -96,6 +106,8 @@ const UserDetail = new Schema({
 UserDetail.plugin(passportLocalMongoose);
 const UserDetails = mongoose.model('userInfo', UserDetail, 'userInfo');
 
+
+
 // PASSPORT LOCAL AUTHENTICATION
 
 passport.use(UserDetails.createStrategy());
@@ -103,10 +115,7 @@ passport.use(UserDetails.createStrategy());
 passport.serializeUser(UserDetails.serializeUser());
 passport.deserializeUser(UserDetails.deserializeUser());
 
-// App modules
 
-const iterator = require('./iterator');
-iterator.init();
 
 
 // ROUTES
@@ -148,10 +157,20 @@ app.post('/login', (req, res, next) => {
 
 //Private routes
 app.get('/controls', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
+    let username = req.user.username;
+    iterationResults[username] = iterationResults[username] || {};
     res.sendFile('html/controls.html', {root: staticRoot})
 });
 app.get('/private', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     res.sendFile('html/private.html', {root: staticRoot})
+});
+
+app.get('/register',connectEnsureLogin.ensureLoggedIn(), (req,res)=>{
+    //TODO => Make a register page for new users accessible only to admin login.
+
+    // UserDetails.register({username:'ramon', active: false}, '12345678');
+    // UserDetails.register({username:'uvi', active: false}, '1');
+    // UserDetails.register({username:'almog', active: false}, '12345678');
 });
 app.post('/changePassword', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     let oldPassword = req.body.oldPassword;
@@ -185,8 +204,8 @@ app.get('/logout', (req, res) => {
 
 //Application Routes
 
-app.post('/getProcedures', (req, res) => {
-    //connectEnsureLogin.ensureLoggedIn();
+app.post('/getProcedures',  connectEnsureLogin.ensureLoggedIn(),(req, res) => {
+
     let provincePath = req.body.province + '&locale=es';
     logger.debug(provincePath);
     axios.get('https://sede.administracionespublicas.gob.es' + provincePath)
@@ -209,8 +228,8 @@ app.post('/getProcedures', (req, res) => {
         });
 
 });
-app.post('/pollStatus', (req, res) => {
-    connectEnsureLogin.ensureLoggedIn();
+app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
+    let username = req.user.username;
     let activePolls = req.body;
     for (let rowId in activePolls) {
         if (!activePolls.hasOwnProperty(rowId)) {
@@ -219,41 +238,40 @@ app.post('/pollStatus', (req, res) => {
         let provincePath = activePolls[rowId].provincePath;
         let procedureCode = activePolls[rowId].procedureCode;
 
-        if (!iterationResults.hasOwnProperty(rowId)) {
-            iterationResults[rowId] = {
+        if (!iterationResults[username].hasOwnProperty(rowId)) {
+            iterationResults[username][rowId] = {
                 provincePath: provincePath,
                 procedureCode: procedureCode,
                 finished: false,
                 offices: []
             }
-            iterator.refresh(provincePath, procedureCode, rowId);
+            iterator.refresh(provincePath, procedureCode, rowId, username);
         }
-        else if(iterationResults.hasOwnProperty(rowId) && iterationResults[rowId].finished){
-            iterationResults[rowId] = {
+        else if(iterationResults[username].hasOwnProperty(rowId) && iterationResults[username][rowId].finished){
+            iterationResults[username][rowId] = {
                 provincePath: provincePath,
                 procedureCode: procedureCode,
                 finished: false,
-                offices: iterationResults[rowId].offices
+                offices: iterationResults[username][rowId].offices
             }
-            iterator.refresh(provincePath, procedureCode, rowId);
+            iterator.refresh(provincePath, procedureCode, rowId, username);
         }
     }
 
-    //TODO => Check if active polling rows match number of items in the iteration results
-    let iterationResultsKeys = Object.keys(iterationResults)
-    let activePollsKeys = Object.keys(iterationResults)
+    //Check if active polling rows match number of items in the iteration results
+    let iterationResultsKeys = Object.keys(iterationResults[username])
+    let activePollsKeys = Object.keys(activePolls);
+    //TODO => Test if app can be used concurrently by several users with new username distinction in iterationResults.
+    //TODO => Figure out a way of pruning off different users when their polling requests have stopped.
     if(iterationResultsKeys.length !== activePollsKeys.length){
         let difference = iterationResultsKeys.filter(x => !activePollsKeys.includes(x));
         for(let i = 0; i < difference.length; i++){
            delete iterationResults[difference[i]];
         }
     }
-    res.send(iterationResults);
-
-
+    res.send(iterationResults[username]);
 
 });
-
 
 
 
