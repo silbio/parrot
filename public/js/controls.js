@@ -37,7 +37,7 @@ function populateTableRows(newRow) {
                 break;
             case 3:
                 newCell.classList.add('small');
-                newCell.innerHTML = '<button disabled>' + '&#102270;' + '</button>'
+                newCell.innerHTML = '<button disabled>&#10227;</button>'
                 newCell.addEventListener('click', function () {
                     clearRow(newRow);
                 })
@@ -88,7 +88,8 @@ function populateProcedureSelect(provincePath, rowId) {
                 let linkAddress = 'https://sede.administracionespublicas.gob.es' + provinceSelect.value.replace('citar', 'acInfo;jsessionid=0') + '&tramite=' + procedureSelect.value;
                 procedureSelect.parentElement.innerHTML = `<a href="${linkAddress}" target="_blank">${procedureSelect.options[procedureSelect.selectedIndex].text}</a>`;
                 document.querySelector('#' + rowId + ' td:nth-child(3)').innerText = 'Inicializando';
-                document.querySelector('#' + rowId + ' td:nth-child(4) button').disabled = false;
+                //TODO => Enable button to refresh the line , make sure order is maintained.
+                document.querySelector('#' + rowId + ' td:nth-child(4) button').disabled = true;
                 activePolls[rowId] = {provincePath: provincePath, procedureCode: e.target.value};
             }
         });

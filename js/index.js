@@ -183,6 +183,8 @@ app.get('/register', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
 
 });
 
+
+
 app.post('/register', connectEnsureLogin.ensureAuthenticated(), (req, res) => {
     let userName = req.session.passport.user;
     UserDetails.findOne({username: userName}, (err, userDetails) => {
@@ -317,7 +319,6 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     //Check if active polling rows match number of items in the iteration results
     let iterationResultsKeys = Object.keys(iterationResults[username])
     let activePollsKeys = Object.keys(activePolls);
-    //TODO => Test if app can be used concurrently by several users with new username distinction in iterationResults.
     //TODO => Figure out a way of pruning off different users when their polling requests have stopped.
     if (iterationResultsKeys.length !== activePollsKeys.length) {
         let difference = iterationResultsKeys.filter(x => !activePollsKeys.includes(x));

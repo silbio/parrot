@@ -3,11 +3,6 @@ const utils = require('../../utils');
 module.exports = {
     run: async function (pageId, resolve, reject) {
         try {
-
-            if (pages[pageId].isReload) {
-                await utils.enableAndClick(pageId);
-                resolve({msg: 'Stage 2 done!'});
-            } else {
                 let tomorrow = new Date();
                 let nextYear = new Date();
                 tomorrow.setDate(tomorrow.getDate() + 1);
@@ -26,8 +21,8 @@ module.exports = {
                     // Document Number field
                     await pages[pageId].page.focus('#txtIdCitado');
                     await pages[pageId].page.click('input[id=txtIdCitado]', {clickCount: 3});
-                    let documentNumber = randomValues.documentNumber;
-                    await pages[pageId].page.keyboard.type(documentNumber);
+
+                    await pages[pageId].page.keyboard.type(randomValues.documentNumber);
                     // Name field
 
                     await pages[pageId].page.focus('#txtDesCitado');
@@ -57,7 +52,6 @@ module.exports = {
                             let authSelect = document.getElementById('txtAutActual');
                             let numberOfOptions = authSelect.childElementCount
                             let randomOption = Math.floor(Math.random() * (numberOfOptions - 2) + 2);
-                            console.log(randomOption);
                             authSelect.querySelector(`option:nth-child(${randomOption})`).selected = true;
                         });
                     }
@@ -68,11 +62,11 @@ module.exports = {
                         resolve({msg: 'Stage 2 done!'});
                     }
                 ).catch(err => {
-                    reject({message: err, reset: true});
+                    reject({message: err});
                 });
-            }
+
         } catch (err) {
-            reject({message: err, reset: true});
+            reject({message: err});
         }
 
     }

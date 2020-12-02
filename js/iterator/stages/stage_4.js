@@ -3,8 +3,7 @@ const utils = require('../../utils')
 module.exports = {
     async run(pageId, resolve, reject) {
         try {
-                await pages[pageId].page.screenshot({path: 'logs/screenshots/' + utils.getTimeStampInLocaLIso() + '_stage_4_' + pageId + '.png',
-                    fullPage: true});
+
                 pages[pageId].page.$eval('#idSede', (officeSelect) => {
                     let officesString = '';
                     for (let i = 0; i < officeSelect.length; i++) {

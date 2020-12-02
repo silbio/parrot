@@ -93,39 +93,32 @@ module.exports = {
     enableAndClick: (pageId) => {
         return new Promise(async (resolve, reject) => {
             pages[pageId].page.evaluate(() => {
-                console.log('Enabling Button! btnEnviar: ' + document.getElementById('btnEnviar') + ' Type of enableBtn: ' + typeof window.enableBtn)
+                let sendBtn = document.getElementById('btnEnviar');
+                console.log('Enabling Button! ' + ' Type of enableBtn: ' + typeof window.enableBtn)
                 if (window.hasOwnProperty('enableBtn')) {
                     window.enableBtn();
                     window.enableBtn = function () {
                         console.log('enableBtn ran');
-                        setTimeout(function () {
-                            return true;
-                        }, 2000)
 
-                    };
+                            return true;
+
+
+                    }
                 } else {
-                    console.log('enableBtn not on page.')
-                    return true;
+                    console.log('enableBtn not on page.');
+                        return true;
                 }
             }).then(async () => {
-                await pages[pageId].page.screenshot({
-                    path: 'logs/screenshots/envia-antes.png',
-                    fullPage: true
-                });
-                await pages[pageId].page.waitForTimeout(2000);
+
+
                 await pages[pageId].page.focus('#btnEnviar');
-                await pages[pageId].page.click('#btnEnviar');
-                await pages[pageId].page.waitForTimeout(2000);
-                await pages[pageId].page.screenshot({
-                    path: 'logs/screenshots/envia-despues.png',
-                    fullPage: true
-                });
+                await pages[pageId].page.click('#btnEnviar', {clickCount:3, delay: 1000});
                 logger.debug('Enable and click done!')
                 resolve();
+            }).catch((err) => {
+                reject(err);
             });
-        }).catch((err) => {
-            reject(err);
-        });
+        })
 
     }
 }

@@ -99,7 +99,7 @@ function iterate(pageId, stage, procedureCode = null) {
 
             if (stage === numberOfStages) {
                 pageMakerPromises[pageId].resolve(processResolution);
-                await pages[pageId].page.screenshot({path: 'logs/screenshots/success-' + pageId + '.png',
+                await pages[pageId].page.screenshot({path: 'logs/screenshots/success-' + utils.getTimeStampInLocaLIso() + pageId + '.png',
                     fullPage: true});
                 logger.info('HAR File recorded for pageId: ' + pageId);
                 await pages[pageId].har.stop();

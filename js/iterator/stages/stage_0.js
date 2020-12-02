@@ -21,6 +21,8 @@ module.exports = {
 
                 }, procedureCode
             );
+            await pages[pageId].page.click('#cookie_action_close_header');
+
 
             if (markSelectedProcess) {
                 await pages[pageId].page.click(btnAceptar);
