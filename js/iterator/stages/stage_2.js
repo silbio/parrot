@@ -14,7 +14,7 @@ module.exports = {
                 nextYear.setFullYear(tomorrow.getFullYear() + 1);
                 let randomValues = {
                     documentType: 'PASAPORTE',
-                    documentNumber: utils.getRandomAlphanumeric(3, 'letters') + utils.getRandomAlphanumeric(7, 'numbers'),
+                    documentNumber: utils.getRandomAlphanumeric(2, 3) + utils.getRandomAlphanumeric(3, 7),
                     fullName: utils.getRandomNames(),
                     nationality: utils.getRandomCountry(),
                     expirationDate: utils.getRandomDate(tomorrow, nextYear)

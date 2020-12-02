@@ -62,7 +62,7 @@ const app = express();
 const staticRoot = __dirname + '/../public';
 app.use(express.static(staticRoot));
 app.use('/healthcheck', require('express-healthcheck')());
-app.use(favicon(staticRoot+ '/img/favicon.ico'));
+app.use(favicon(staticRoot + '/img/favicon.ico'));
 
 
 const bodyParser = require('body-parser');
@@ -71,7 +71,6 @@ const expressSession = require('express-session')({
     resave: false,
     saveUninitialized: false
 });
-
 
 
 app.use(bodyParser.json());
@@ -101,11 +100,12 @@ const Schema = mongoose.Schema;
 const UserDetail = new Schema({
     username: String,
     password: String,
+    admin: Boolean
+
 });
 
 UserDetail.plugin(passportLocalMongoose);
 const UserDetails = mongoose.model('userInfo', UserDetail, 'userInfo');
-
 
 
 // PASSPORT LOCAL AUTHENTICATION
@@ -116,12 +116,9 @@ passport.serializeUser(UserDetails.serializeUser());
 passport.deserializeUser(UserDetails.deserializeUser());
 
 
-
-
 // ROUTES
 //User management routes
 const connectEnsureLogin = require('connect-ensure-login');
-
 //Public routes
 app.get('/', (req, res) => {
     res.sendFile('html/index.html', {root: staticRoot})
@@ -165,31 +162,75 @@ app.get('/private', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     res.sendFile('html/private.html', {root: staticRoot})
 });
 
-app.get('/register',connectEnsureLogin.ensureLoggedIn(), (req,res)=>{
-    //TODO => Make a register page for new users accessible only to admin login.
+app.get('/register', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
+    let userName = req.session.passport.user;
+    UserDetails.findOne({username: userName}, (err, userDetails) => {
+        logger.warn(userDetails.username + ' accessed the registration page.');
+        if (userDetails.admin) {
+            res.sendFile('html/register.html', {root: staticRoot});
+        } else {
+            res.send(401);
+        }
+    })
 
-    // UserDetails.register({username:'ramon', active: false}, '12345678');
-    // UserDetails.register({username:'uvi', active: false}, '1');
-    // UserDetails.register({username:'almog', active: false}, '12345678');
+
 });
+
+app.post('/register', connectEnsureLogin.ensureAuthenticated(), (req, res) => {
+    let userName = req.session.passport.user;
+    UserDetails.findOne({username: userName}, (err, userDetails) => {
+
+        if (userDetails.admin) {
+            let tempPassword = utils.getRandomAlphanumeric(1, 8);
+            UserDetails.register({
+                username: req.body.username,
+                active: true,
+                admin: false
+            }, tempPassword).then((result) => {
+                console.log('Registered ' + result);
+                res.redirect('/register?info=' + tempPassword);
+            }).catch((err) => {
+                console.error('Registration Error: ' + err);
+                res.redirect('/register?info=' + err);
+            });
+            logger.warn('Admin ' + userDetails.username + ' registered user ' + req.body.username);
+        } else {
+            res.send(401);
+        }
+    })
+})
 app.post('/changePassword', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     let oldPassword = req.body.oldPassword;
     let newPassword = req.body.newPassword;
     let passwordValidation = req.body.passwordValidate;
+    let errorMessages = {
+        'success':
+            'Contraseña Actualizada con éxito',
+        'oldPasswordFail':
+            'Contraseña anterior errónea, por favor, inténtelo de nuevo',
+
+        'noMatch':
+            'La nueva contraseña no coincide con el campo de verificación, por favor, inténtelo de nuevo',
+
+        'samePassword':
+            'La nueva contraseña es igual que la anterior, por favor, inténtelo de nuevo',
+    }
+
+    let basePath = '/private?info=';
     if (oldPassword === newPassword) {
-        res.redirect('/private?info=samePassword')
+        res.redirect(basePath + errorMessages.samePassword);
     } else if (newPassword === passwordValidation) {
 
         let userName = req.session.passport.user;
         UserDetails.findOne({username: userName}, (err, userDetails) => {
             userDetails.changePassword(oldPassword, newPassword).then(() => {
-                res.redirect('/private?info=success',)
+                res.redirect(basePath + errorMessages.success)
             }).catch((err) => {
-                res.redirect('/private?info=oldPasswordFail')
+                res.redirect(basePath + errorMessages.oldPasswordFail)
             })
         })
     } else {
-        res.redirect('/private?info=noMatch')
+        res.redirect(basePath + errorMessages.noMatch)
     }
 });
 app.get('/user', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
@@ -204,7 +245,7 @@ app.get('/logout', (req, res) => {
 
 //Application Routes
 
-app.post('/getProcedures',  connectEnsureLogin.ensureLoggedIn(),(req, res) => {
+app.post('/getProcedures', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
 
     let provincePath = req.body.province + '&locale=es';
     logger.debug(provincePath);
@@ -237,7 +278,7 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
         }
         let provincePath = activePolls[rowId].provincePath;
         let procedureCode = activePolls[rowId].procedureCode;
-
+        let hasProvinceOrProcedureChanged = (iterationResults[username].hasOwnProperty(rowId) && (iterationResults[username][rowId].provincePath !== provincePath || iterationResults[username][rowId].procedureCode !== procedureCode));
         if (!iterationResults[username].hasOwnProperty(rowId)) {
             iterationResults[username][rowId] = {
                 provincePath: provincePath,
@@ -246,13 +287,20 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
                 offices: []
             }
             iterator.refresh(provincePath, procedureCode, rowId, username);
-        }
-        else if(iterationResults[username].hasOwnProperty(rowId) && iterationResults[username][rowId].finished){
+        } else if (iterationResults[username].hasOwnProperty(rowId) && iterationResults[username][rowId].finished) {
             iterationResults[username][rowId] = {
                 provincePath: provincePath,
                 procedureCode: procedureCode,
                 finished: false,
-                offices: iterationResults[username][rowId].offices
+                offices: hasProvinceOrProcedureChanged ? [] : iterationResults[username][rowId].offices
+            }
+            iterator.refresh(provincePath, procedureCode, rowId, username);
+        } else if (hasProvinceOrProcedureChanged && !iterationResults[username][rowId].finished) {
+            iterationResults[username][rowId] = {
+                provincePath: provincePath,
+                procedureCode: procedureCode,
+                finished: false,
+                offices: []
             }
             iterator.refresh(provincePath, procedureCode, rowId, username);
         }
@@ -263,10 +311,10 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     let activePollsKeys = Object.keys(activePolls);
     //TODO => Test if app can be used concurrently by several users with new username distinction in iterationResults.
     //TODO => Figure out a way of pruning off different users when their polling requests have stopped.
-    if(iterationResultsKeys.length !== activePollsKeys.length){
+    if (iterationResultsKeys.length !== activePollsKeys.length) {
         let difference = iterationResultsKeys.filter(x => !activePollsKeys.includes(x));
-        for(let i = 0; i < difference.length; i++){
-           delete iterationResults[difference[i]];
+        for (let i = 0; i < difference.length; i++) {
+            delete iterationResults[difference[i]];
         }
     }
     res.send(iterationResults[username]);

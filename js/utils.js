@@ -1,10 +1,13 @@
 const exec = require('child_process').exec;
 module.exports = {
-    getRandomAlphanumeric: (length, type) => {
+    getRandomAlphanumeric: (type, length) => {
+        //type 1 is alphanumeric
+        //type 2 only letters
+        //type 3 only numbers
         let result = '';
         let letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         let numbers = '0123456789';
-        let characters = type === 'letters' ? letters : numbers;
+        let characters = (type > 1) ? (type > 2 ? numbers : letters) : (letters + numbers);
         let typeLength = characters.length;
 
         for (let i = 0; i < length; i++) {
@@ -105,14 +108,19 @@ module.exports = {
                     return true;
                 }
             }).then(async () => {
-                await pages[pageId].page.waitForTimeout(2000);
-                await pages[pageId].page.focus('#btnEnviar');
-                await pages[pageId].page.click('#btnEnviar', {clickCount: 3, delay: 1000});
                 await pages[pageId].page.screenshot({
-                    path: 'logs/screenshots/envia-' + pageId + '.png',
+                    path: 'logs/screenshots/envia-antes.png',
                     fullPage: true
                 });
-                logger.info('Enable and click done!')
+                await pages[pageId].page.waitForTimeout(2000);
+                await pages[pageId].page.focus('#btnEnviar');
+                await pages[pageId].page.click('#btnEnviar');
+                await pages[pageId].page.waitForTimeout(2000);
+                await pages[pageId].page.screenshot({
+                    path: 'logs/screenshots/envia-despues.png',
+                    fullPage: true
+                });
+                logger.debug('Enable and click done!')
                 resolve();
             });
         }).catch((err) => {

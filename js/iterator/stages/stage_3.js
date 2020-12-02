@@ -5,7 +5,7 @@ module.exports = {
            await utils.enableAndClick(pageId);
            resolve({msg: 'Stage 3 done!'});
         } catch (err) {
-            reject({message: err, reset: false});
+            reject({message: err});
         }
 
     }

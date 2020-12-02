@@ -97,15 +97,12 @@ function iterate(pageId, stage, procedureCode = null) {
 
             stage++;
 
-            if (stage > 3) {
-                await pages[pageId].page.screenshot({path: 'logs/screenshots/' + utils.getTimeStampInLocaLIso() + '_stage_' + stage + '_' + pageId + '.png'});
-            }
             if (stage === numberOfStages) {
                 pageMakerPromises[pageId].resolve(processResolution);
-                await pages[pageId].page.screenshot({path: 'logs/screenshots/success-' + pageId + '.png'});
+                await pages[pageId].page.screenshot({path: 'logs/screenshots/success-' + pageId + '.png',
+                    fullPage: true});
                 logger.info('HAR File recorded for pageId: ' + pageId);
                 await pages[pageId].har.stop();
-
                 return true;
             }
 
@@ -120,8 +117,7 @@ function iterate(pageId, stage, procedureCode = null) {
             //Look for captchas
 
             let captchaOptions = await captchaControl.detect(pageId);
-            pages[pageId].lastStageHasInvisibleCaptcha = pages[pageId].thisStageHasInvisibleCaptcha || false;
-            pages[pageId].thisStageHasInvisibleCaptcha = captchaOptions.isInvisible || false;
+
 
 //Check for exceptions
             let matchesPreviousStageTraits = await utils.checkPageIdTraits(pageId, stageSuccessCriteria[stage - 1].idTraits.selector, stageSuccessCriteria[stage - 1].idTraits.contents);
@@ -133,8 +129,7 @@ function iterate(pageId, stage, procedureCode = null) {
             //Second option checks if the page was reloaded.
             if (matchesPreviousStageTraits || urlMatchesPreviousStage) {
                 pages[pageId].isReload = true;
-                if (captchaOptions.siteKey &&
-                    !pages[pageId].lastStageHasInvisibleCaptcha) {
+                if (captchaOptions.siteKey) {
 //TODO => Figure out why it attempts to report an incorrect captcha when the last stage was invisible
                     captchaControl.reportIncorrect(pageId);
                     await captchaControl.request(pageId, captchaOptions).catch((err) => {
@@ -165,7 +160,7 @@ function iterate(pageId, stage, procedureCode = null) {
 
 
                     //Solve captcha before running stage code.
-                    if (captchaOptions.siteKey && !captchaOptions.isInvisible) {
+                    if (captchaOptions.siteKey) {
 
                         await captchaControl.request(pageId, captchaOptions).catch((err) => {
                             logger.error(err);

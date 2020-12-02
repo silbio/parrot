@@ -130,7 +130,7 @@ function pollTask(taskId, attempt, resolve, reject, pageId) {
         let gRecaptchaStatus = taskResponse.data.status
 
         if (gRecaptchaStatus === 'ready') {
-            logger.info('reCaptcha solution for ' + pageId + ' ready.')
+            logger.debug('reCaptcha solution for ' + pageId + ' ready.')
             resolve(taskResponse.data.solution.gRecaptchaResponse);
         } else if (attempt > 30) {
             reject('Too many polling tries for pageId: ' + pageId);

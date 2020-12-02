@@ -15,7 +15,7 @@ async function init() {
     global.pages = {};
     global.browser = await puppeteer.launch(
         {
-            headless: true,
+            headless: false,
             //slowMo: 100,
             args: [
                 `--user-agent=${userAgentString}`

@@ -23,7 +23,7 @@ h1#mainTitle {
     margin: 10px 0 20px 10px
 }
 
-#error-message {
+#serverMessage {
     display: block;
     margin: 10px;
     font-size: large;
@@ -66,20 +66,40 @@ h1#mainTitle {
     flex-direction: column;
 }
 
-td {
+#alerts{
+    display: flex;
+    flex-direction: column;
+}
+
+#alerts tr{
+    display: flex;
+    flex: 1;
+}
+
+td, th {
     border: 1px solid black;
 
 }
 
-td.large {
-    width: 32%;
+td.large, th.large {
+    display: flex;
+    flex:10;
 }
 
-td.small {
-    width: 2%;
-    text-align: center;
+td.medium, th.medium {
+    display: flex;
+    flex:5;
+}
+
+td.small, th.small {
+    display: flex;
+    flex: 1;
+    min-width: 2%;
+    max-width: 2%;
     background: grey;
     border-radius: 3px;
+    align-items: center;
+    justify-content: center;
 }
 
 td.small:hover {
