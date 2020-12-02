@@ -66,16 +66,23 @@ app.use(favicon(staticRoot + '/img/favicon.ico'));
 
 
 const bodyParser = require('body-parser');
-const expressSession = require('express-session')({
+const expressSession = require('express-session');
+const MemoryStore = require('memorystore')(expressSession)
+
+app.use(expressSession({
     secret: 'MalagaKabalahMacarena',
+    name: 'silbSession',
     resave: false,
-    saveUninitialized: false
-});
+    saveUninitialized: true,
+    cookie: { maxAge: 86400000 },
+    store: new MemoryStore({
+        checkPeriod: 86400000 // prune expired entries every 24h
+    })
+}));
 
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(expressSession);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log('App listening on port ' + port));
@@ -226,7 +233,8 @@ app.post('/changePassword', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
             userDetails.changePassword(oldPassword, newPassword).then(() => {
                 res.redirect(basePath + errorMessages.success)
             }).catch((err) => {
-                res.redirect(basePath + errorMessages.oldPasswordFail)
+                logger.debug('Change password failure: ' + err);
+                res.redirect(basePath + errorMessages.oldPasswordFail);
             })
         })
     } else {
@@ -314,7 +322,7 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     if (iterationResultsKeys.length !== activePollsKeys.length) {
         let difference = iterationResultsKeys.filter(x => !activePollsKeys.includes(x));
         for (let i = 0; i < difference.length; i++) {
-            delete iterationResults[difference[i]];
+            delete iterationResults[username][difference[i]];
         }
     }
     res.send(iterationResults[username]);
