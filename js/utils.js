@@ -53,6 +53,9 @@ module.exports = {
     },
     connectVpn: () => {
         //TODO => Test access with VPN randomization
+        //TODO => Create startup scripts so that PM2 runs the node app on start up.
+        //TODO => Set up twice daily automatic restart for server.
+        //
         //IP address randomization over ProtonVPN - Use visudo to allow user to run command as root.
         return new Promise((resolve, reject) => {
             //     let startVPN = exec("sudo protonvpn c -r", function (err, stdout, stderr) {

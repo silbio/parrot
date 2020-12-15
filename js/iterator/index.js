@@ -27,25 +27,29 @@ async function init() {
 
 
 async function refresh(provincePath, procedureCode, rowId, username) {
-        let pageId = await uuidv4();
-        pages[pageId] = pages[pageId] || {}
-        pages[pageId].rowId = rowId;
-        pageMaker.run(pageId, provincePath, procedureCode, userAgentString)
-            .then((resolution) => {
-                logger.info(resolution);
-                iterationResults[username][rowId].provincePath =provincePath;
-                iterationResults[username][rowId].procedureCode= procedureCode;
-                iterationResults[username][rowId].offices= resolution.offices;
-                iterationResults[username][rowId].finished = true;
-                logger.info('returning Iteration result');
-                pages[pageId].page.close();
-            }).catch(err => {
-            logger.warn(err);
+    let pageId = await uuidv4();
+    pages[pageId] = pages[pageId] || {}
+    pages[pageId].rowId = rowId;
+    pageMaker.run(pageId, provincePath, procedureCode, userAgentString)
+        .then((resolution) => {
+            logger.info(resolution);
+            iterationResults[username][rowId].provincePath = provincePath;
+            iterationResults[username][rowId].procedureCode = procedureCode;
+            iterationResults[username][rowId].offices = resolution.offices;
             iterationResults[username][rowId].finished = true;
+            logger.info('returning Iteration result');
+            pages[pageId].page.goto('about:blank').then(() => {
+                pages[pageId].page.close();
+            })
+
+        }).catch(err => {
+        logger.warn(err);
+        iterationResults[username][rowId].finished = true;
+        pages[pageId].page.goto('about:blank').then(() => {
             pages[pageId].page.close();
         });
+    });
 }
-
 
 
 module.exports = {init, refresh}

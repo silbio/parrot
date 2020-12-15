@@ -69,6 +69,8 @@ const bodyParser = require('body-parser');
 const expressSession = require('express-session');
 const MemoryStore = require('memorystore')(expressSession)
 
+//TODO => Switch out Memory store for Mongo Store
+
 app.use(expressSession({
     secret: 'MalagaKabalahMacarena',
     name: 'silbSession',
@@ -320,6 +322,8 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     let iterationResultsKeys = Object.keys(iterationResults[username])
     let activePollsKeys = Object.keys(activePolls);
     //TODO => Figure out a way of pruning off different users when their polling requests have stopped.
+    //TODO => Attach session data to user on DB so that is can be restored after reload.
+    // TODO=> Keep daily timer for each user to track how many hours they are using, and reset every day at 00:00. Make mechanism to stop polling after user's number of hours have been consumed. Reform front end to handle going over the limit, with the same modal as the 500 error.
     if (iterationResultsKeys.length !== activePollsKeys.length) {
         let difference = iterationResultsKeys.filter(x => !activePollsKeys.includes(x));
         for (let i = 0; i < difference.length; i++) {
