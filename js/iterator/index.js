@@ -12,6 +12,7 @@ const pageMaker = require('./pageMaker');
 
 //Initialize
 async function init() {
+    logger.debug('Init sequence called.');
     global.pages = {};
     global.browser = await puppeteer.launch(
         {
@@ -23,6 +24,7 @@ async function init() {
         }
     );
     global.iterationResults = {};
+    logger.debug('iterationResults initialized. ' + JSON.stringify(iterationResults) );
 }
 
 

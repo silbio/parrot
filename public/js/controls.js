@@ -1,4 +1,4 @@
-const numberOfRows = 3;
+let allowedRows = 1;
 const pollingInterval = 5000;
 const statsTableBody = document.getElementById('statsTableBody');
 const provincesSelectTemplate = '<select><option selected="selected" value="">Seleccionar ...</option><option value="/icpplus/citar?p=15">A Coruña</option><option value="/icpplus/citar?p=2">Albacete</option><option value="/icpco/citar?p=3">Alicante</option><option value="/icpplus/citar?p=4">Almería</option><option value="/icpplus/citar?p=1">Araba</option><option value="/icpplus/citar?p=33">Asturias</option><option value="/icpplus/citar?p=5">Ávila</option><option value="/icpplus/citar?p=6">Badajoz</option><option value="/icpplustie/citar?p=8">Barcelona</option><option value="/icpplus/citar?p=48">Bizkaia</option><option value="/icpplus/citar?p=9">Burgos</option><option value="/icpplus/citar?p=10">Cáceres</option><option value="/icpplus/citar?p=11">Cádiz</option><option value="/icpplus/citar?p=39">Cantabria</option><option value="/icpplus/citar?p=12">Castellón</option><option value="/icpplus/citar?p=51">Ceuta</option><option value="/icpplus/citar?p=13">Ciudad Real</option><option value="/icpplus/citar?p=14">Córdoba</option><option value="/icpplus/citar?p=16">Cuenca</option><option value="/icpplus/citar?p=20">Gipuzkoa</option><option value="/icpplus/citar?p=17">Girona</option><option value="/icpplus/citar?p=18">Granada</option><option value="/icpplus/citar?p=19">Guadalajara</option><option value="/icpplus/citar?p=21">Huelva</option><option value="/icpplus/citar?p=22">Huesca</option><option value="/icpco/citar?p=7">Illes Balears</option><option value="/icpplus/citar?p=23">Jaén</option><option value="/icpplus/citar?p=26">La Rioja</option><option value="/icpco/citar?p=35">Las Palmas</option><option value="/icpplus/citar?p=24">León</option><option value="/icpplus/citar?p=25">Lleida</option><option value="/icpplus/citar?p=27">Lugo</option><option value="/icpplustiem/citar?p=28">Madrid</option><option value="/icpco/citar?p=29">Málaga</option><option value="/icpplus/citar?p=52">Melilla</option><option value="/icpplus/citar?p=30">Murcia</option><option value="/icpplus/citar?p=31">Navarra</option><option value="/icpplus/citar?p=32">Orense</option><option value="/icpplus/citar?p=34">Palencia</option><option value="/icpplus/citar?p=36">Pontevedra</option><option value="/icpplus/citar?p=37">Salamanca</option><option value="/icpco/citar?p=38">S.Cruz Tenerife</option><option value="/icpplus/citar?p=40">Segovia</option><option value="/icpplus/citar?p=41">Sevilla</option><option value="/icpplus/citar?p=42">Soria</option><option value="/icpplus/citar?p=43">Tarragona</option><option value="/icpplus/citar?p=44">Teruel</option><option value="/icpplus/citar?p=45">Toledo</option><option value="/icpplus/citar?p=46">Valencia</option><option value="/icpplus/citar?p=47">Valladolid</option><option value="/icpplus/citar?p=49">Zamora</option><option value="/icpplus/citar?p=50">Zaragoza</option></select>';
@@ -10,15 +10,16 @@ const snd = new Audio("data:audio/mpeg;base64,SUQzAwAAAAAPGVRTU0UAAAALAAAATEFNRS
 let activePolls = {};
 
 populateWelcomeMessage();
-
-for (let i = 0; i < numberOfRows; i++) {
-    let rowElement = document.createElement('tr');
-    rowElement.id = "row" + i;
-    rowElement.setAttribute('data-sound', 'true');
-    populateTableRows(rowElement, false);
-}
 startPolling();
 
+function populateTable(numberOfRows) {
+    for (let i = 0; i < numberOfRows; i++) {
+        let rowElement = document.createElement('tr');
+        rowElement.id = "row" + i;
+        rowElement.setAttribute('data-sound', 'true');
+        populateTableRows(rowElement, false);
+    }
+}
 
 function populateTableRows(newRow, isRefresh) {
     for (let i = 0; i < 5; i++) {
@@ -47,13 +48,13 @@ function populateTableRows(newRow, isRefresh) {
             case 4:
                 newCell.classList.add('small');
                 newCell.innerHTML = '<button>&#128266;</button>';
-                newCell.addEventListener('click', function () {
+                newCell.addEventListener('click', function (event) {
                    let isSound = newRow.toggleAttribute('data-sound');
                     if(isSound){
-                        newCell.innerText = '\uD83D\uDD0A'
+                        event.target.innerText = '\uD83D\uDD0A'
                     }
                     else{
-                        newCell.innerText = '\uD83D\uDD07'
+                        event.target.innerText = '\uD83D\uDD07'
                     }
                 })
         }
@@ -75,7 +76,9 @@ function clearRow(rowElement) {
 
 function populateWelcomeMessage() {
     connect(window.location.origin + "/user", null).then(function (response) {
-        document.getElementById("welcome-message").innerText = `Usuario ${response}`;
+        response = JSON.parse(response);
+        document.getElementById("welcome-message").innerText = `Usuario ${response.username}`;
+        populateTable(parseInt(response.allowedRows));
     }).catch(function (err) {
         console.error(err);
     })

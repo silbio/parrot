@@ -1,9 +1,6 @@
 const path = require('path');
 // App modules
 
-const iterator = require('./iterator');
-iterator.init();
-
 const utils = require('./utils');
 utils.connectVpn().then(() => {
     process.on('exit', () => {
@@ -51,7 +48,22 @@ global.logger = log4js.getLogger();
 logger.level = 'debug';
 
 
+const iterator = require('./iterator');
+iterator.init();
+
 const axios = require('axios');
+
+
+//Garbage collection
+//TODO => Test garbage collection with multiple users.
+
+// setInterval(() => {
+//     for (let user in iterationResults) {
+//         if (iterationResults.hasOwnProperty(user) && ((new Date() - iterationResults[user].lastAccess) > 1800000)) {
+//             delete iterationResults[user];
+//         }
+//     }
+// }, 1800000)
 
 // Express
 
@@ -76,7 +88,7 @@ app.use(expressSession({
     name: 'silbSession',
     resave: false,
     saveUninitialized: true,
-    cookie: { maxAge: 86400000 },
+    cookie: {maxAge: 86400000},
     store: new MemoryStore({
         checkPeriod: 86400000 // prune expired entries every 24h
     })
@@ -109,8 +121,8 @@ const Schema = mongoose.Schema;
 const UserDetail = new Schema({
     username: String,
     password: String,
-    admin: Boolean
-
+    admin: Boolean,
+    allowedRows: Number
 });
 
 UserDetail.plugin(passportLocalMongoose);
@@ -164,8 +176,13 @@ app.post('/login', (req, res, next) => {
 //Private routes
 app.get('/controls', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     let username = req.user.username;
-    iterationResults[username] = iterationResults[username] || {};
-    res.sendFile('html/controls.html', {root: staticRoot})
+    if (global.hasOwnProperty('iterationResults')) {
+        iterationResults[username] = iterationResults[username] || {};
+        res.sendFile('html/controls.html', {root: staticRoot});
+    } else {
+        res.sendFile('html/error.html', {root: staticRoot});
+    }
+
 });
 app.get('/private', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     res.sendFile('html/private.html', {root: staticRoot})
@@ -186,7 +203,6 @@ app.get('/register', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
 });
 
 
-
 app.post('/register', connectEnsureLogin.ensureAuthenticated(), (req, res) => {
     let userName = req.session.passport.user;
     UserDetails.findOne({username: userName}, (err, userDetails) => {
@@ -196,7 +212,8 @@ app.post('/register', connectEnsureLogin.ensureAuthenticated(), (req, res) => {
             UserDetails.register({
                 username: req.body.username,
                 active: true,
-                admin: false
+                admin: req.body.admin || false,
+                allowedRows: req.body.allowedRows
             }, tempPassword).then((result) => {
                 console.log('Registered ' + result);
                 res.redirect('/register?info=' + tempPassword);
@@ -246,7 +263,19 @@ app.post('/changePassword', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     }
 });
 app.get('/user', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
-    res.send(req.user.username);
+    let ip= req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    logger.info("User " + req.user.username + " connected from IP " + ip);
+    UserDetails.findOne({username: req.user.username}, (err, userDetails) => {
+        if(err){
+            logger.error("Error getting user details: " + err)
+        }
+        if(userDetails){
+            let userData = {username: userDetails.username, allowedRows: userDetails.allowedRows}
+
+            res.json(userData);
+        }
+    })
+
 });
 app.get('/logout', (req, res) => {
     connectEnsureLogin.ensureLoggedIn();
@@ -278,12 +307,16 @@ app.post('/getProcedures', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
 
             let combinedSelect = `<select> ${optionsString}</select>`
             res.send(combinedSelect);
-        });
+        }).catch((e) => {
+        logger.warn(e);
+        res.send(500);
+    });
 
 });
 app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     let username = req.user.username;
     let activePolls = req.body;
+    logger.debug('Poll request from user: ' + username + ' with active polls: ' + JSON.stringify(activePolls));
     for (let rowId in activePolls) {
         if (!activePolls.hasOwnProperty(rowId)) {
             continue;
@@ -292,6 +325,7 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
         let procedureCode = activePolls[rowId].procedureCode;
         let hasProvinceOrProcedureChanged = (iterationResults[username].hasOwnProperty(rowId) && (iterationResults[username][rowId].provincePath !== provincePath || iterationResults[username][rowId].procedureCode !== procedureCode));
         if (!iterationResults[username].hasOwnProperty(rowId)) {
+            logger.debug('Username ' + username + ' has no iteration results, adding. ' + JSON.stringify(iterationResults));
             iterationResults[username][rowId] = {
                 provincePath: provincePath,
                 procedureCode: procedureCode,
@@ -300,6 +334,7 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
             }
             iterator.refresh(provincePath, procedureCode, rowId, username);
         } else if (iterationResults[username].hasOwnProperty(rowId) && iterationResults[username][rowId].finished) {
+            logger.debug('Username ' + username + ' has finished iteration results. ' + JSON.stringify(iterationResults));
             iterationResults[username][rowId] = {
                 provincePath: provincePath,
                 procedureCode: procedureCode,
@@ -308,6 +343,8 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
             }
             iterator.refresh(provincePath, procedureCode, rowId, username);
         } else if (hasProvinceOrProcedureChanged && !iterationResults[username][rowId].finished) {
+            logger.debug('Username ' + username + ' has unfinished iteration results. ' + iterationResults);
+
             iterationResults[username][rowId] = {
                 provincePath: provincePath,
                 procedureCode: procedureCode,
@@ -321,16 +358,19 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     //Check if active polling rows match number of items in the iteration results
     let iterationResultsKeys = Object.keys(iterationResults[username])
     let activePollsKeys = Object.keys(activePolls);
-    //TODO => Figure out a way of pruning off different users when their polling requests have stopped.
+    iterationResults[username].lastAccess = new Date();
     //TODO => Attach session data to user on DB so that is can be restored after reload.
     // TODO=> Keep daily timer for each user to track how many hours they are using, and reset every day at 00:00. Make mechanism to stop polling after user's number of hours have been consumed. Reform front end to handle going over the limit, with the same modal as the 500 error.
+    //TODO=> Correlate between users to make sure we're not iterating over the same province/procedure combos for different users.
     if (iterationResultsKeys.length !== activePollsKeys.length) {
         let difference = iterationResultsKeys.filter(x => !activePollsKeys.includes(x));
         for (let i = 0; i < difference.length; i++) {
             delete iterationResults[username][difference[i]];
         }
     }
-    res.send(iterationResults[username]);
+    let rowsResults = {...iterationResults[username]};
+    delete rowsResults.lastAccess;
+    res.send(rowsResults);
 
 });
 
