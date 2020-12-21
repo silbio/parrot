@@ -316,7 +316,6 @@ app.post('/getProcedures', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
 app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     let username = req.user.username;
     let activePolls = req.body;
-    logger.debug('Poll request from user: ' + username + ' with active polls: ' + JSON.stringify(activePolls));
     for (let rowId in activePolls) {
         if (!activePolls.hasOwnProperty(rowId)) {
             continue;
