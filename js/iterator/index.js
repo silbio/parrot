@@ -17,13 +17,13 @@ async function init() {
     global.browser = await puppeteer.launch(
         {
             headless: process.env.NODE_ENV !== 'development',
-            //slowMo: 100,
             args: [
                 `--user-agent=${userAgentString}`
             ]
         }
     );
     global.iterationResults = {};
+    global.activeUsers = {};
     logger.debug('iterationResults initialized. ' + JSON.stringify(iterationResults) );
 }
 

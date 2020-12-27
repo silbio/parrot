@@ -1,4 +1,3 @@
-
 <html>
 <head>
     <title> Login </title>
@@ -6,6 +5,7 @@
 </head>
 
 <body>
+
 <form action="/login" method="post" id="loginForm">
     <div class="title">
         <h3>Login</h3>
@@ -13,18 +13,22 @@
     <div class="field">
         <label for="username">Username:</label>
         <input type="text" name="username" id="username" autocomplete="username"/>
-        <br />
+        <br/>
     </div>
     <div class="field">
         <label for="password">Password:</label>
         <input type="password" name="password" required id="password" autocomplete="current-password"/>
     </div>
     <div class="field">
-        <input class="submit-btn" type="submit" value="Submit" required />
+        <input class="submit-btn" type="submit" value="Submit" required/>
     </div>
     <label id="serverMessage"></label>
 </form>
 
+<br/>
+<span id='contactBanner'>
+    ¿No eres cliente? Escríbenos a <a href="mailto:ventas@silb.io">ventas@silb.io</a> para recibir más información.
+</span>
 <script src="../js/frontend.js" type="application/javascript"></script>
 
 </body>

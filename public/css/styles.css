@@ -8,10 +8,21 @@ body {
 
 h1#mainTitle {
     text-align: center;
+    text-shadow: 2px 2px black;
     font-size: 72pt;
     color: #bada55;
     padding: 20px;
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.75);
+}
+
+p.titleText{
+    text-align: center;
+    font-size: 1em;
+    color: black;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.75);
+    width: 75%;
+    margin: 0 auto;
 }
 h2.errorTitle {
     text-align: center;
@@ -55,6 +66,23 @@ h3.errorBody {
     line-height: 2;
     float: right;
     margin: 0 5px;
+}
+
+#contactBanner {
+     text-align: center;
+     width: 100%;
+     height: 5vh;
+     background: rgba(0, 0, 0, 0.75);
+     color: white;
+     font-size: large;
+     padding: 20px;
+    position: fixed;
+    bottom: 50px;
+    left: 0;
+ }
+
+#contactBanner a{
+    color: #bada55;
 }
 
 #mainEntry {

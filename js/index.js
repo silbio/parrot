@@ -56,6 +56,7 @@ const axios = require('axios');
 
 //Garbage collection
 //TODO => Test garbage collection with multiple users.
+//TODO => Set up cron module for all time-related tasks, like user session pruning and automatic log outs.
 
 // setInterval(() => {
 //     for (let user in iterationResults) {
@@ -122,7 +123,8 @@ const UserDetail = new Schema({
     username: String,
     password: String,
     admin: Boolean,
-    allowedRows: Number
+    allowedRows: Number,
+    lastIp: String
 });
 
 UserDetail.plugin(passportLocalMongoose);
@@ -155,11 +157,12 @@ app.post('/login', (req, res, next) => {
             }
 
             if (!user) {
-                let errMsg = 'Error en la autenticaciónm, por favor, inténtelo de nuevo.';
+                let errMsg = 'Error en la autenticación, por favor, inténtelo de nuevo.';
                 if (info.name === 'IncorrectPasswordError') {
                     errMsg = 'Nombre de usuario o contraseña incorrecto.'
                 }
-                return res.redirect('/login?info=' + errMsg);
+                return res.redirect('/login?info=' + Buffer.from(errMsg).toString('base64'),
+                );
             }
 
             req.logIn(user, function (err) {
@@ -173,6 +176,11 @@ app.post('/login', (req, res, next) => {
         })(req, res, next);
 });
 
+app.get('/error', (req, res) => {
+    req.logout();
+    res.sendFile('html/error.html', {root: staticRoot});
+});
+
 //Private routes
 app.get('/controls', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     let username = req.user.username;
@@ -180,7 +188,7 @@ app.get('/controls', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
         iterationResults[username] = iterationResults[username] || {};
         res.sendFile('html/controls.html', {root: staticRoot});
     } else {
-        res.sendFile('html/error.html', {root: staticRoot});
+        res.redirect('/error');
     }
 
 });
@@ -213,13 +221,14 @@ app.post('/register', connectEnsureLogin.ensureAuthenticated(), (req, res) => {
                 username: req.body.username,
                 active: true,
                 admin: req.body.admin || false,
-                allowedRows: req.body.allowedRows
+                allowedRows: req.body.allowedRows,
+                lastIp: '0.0.0.0'
             }, tempPassword).then((result) => {
                 console.log('Registered ' + result);
-                res.redirect('/register?info=' + tempPassword);
+                res.redirect('/register?info=' + Buffer.from(tempPassword).toString('base64'));
             }).catch((err) => {
                 console.error('Registration Error: ' + err);
-                res.redirect('/register?info=' + err);
+                res.redirect('/register?info=' + Buffer.from(err).toString('base64'));
             });
             logger.warn('Admin ' + userDetails.username + ' registered user ' + req.body.username);
         } else {
@@ -233,15 +242,13 @@ app.post('/changePassword', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     let passwordValidation = req.body.passwordValidate;
     let errorMessages = {
         'success':
-            'Contraseña Actualizada con éxito',
+            Buffer.from('Contraseña Actualizada con éxito').toString('base64'),
         'oldPasswordFail':
-            'Contraseña anterior errónea, por favor, inténtelo de nuevo',
-
+            Buffer.from('Contraseña anterior errónea, por favor, inténtelo de nuevo').toString('base64'),
         'noMatch':
-            'La nueva contraseña no coincide con el campo de verificación, por favor, inténtelo de nuevo',
-
+            Buffer.from('La nueva contraseña no coincide con el campo de verificación, por favor, inténtelo de nuevo').toString('base64'),
         'samePassword':
-            'La nueva contraseña es igual que la anterior, por favor, inténtelo de nuevo',
+            Buffer.from('La nueva contraseña es igual que la anterior, por favor, inténtelo de nuevo').toString('base64'),
     }
 
     let basePath = '/private?info=';
@@ -263,13 +270,29 @@ app.post('/changePassword', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     }
 });
 app.get('/user', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
-    let ip= req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    logger.info("User " + req.user.username + " connected from IP " + ip);
-    UserDetails.findOne({username: req.user.username}, (err, userDetails) => {
-        if(err){
-            logger.error("Error getting user details: " + err)
+    let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    let username = req.user.username;
+    logger.info("User " + username + " connected from IP " + ip);
+    UserDetails.findOne({username: username}, (err, userDetails) => {
+        if (err) {
+            logger.error("Error getting user details: " + err);
+            res.redirect('/error');
         }
-        if(userDetails){
+        if (userDetails) {
+            if (userDetails.lastIp !== ip) {
+                logger.error('User ' + username + ' used to connect from IP ' + userDetails.lastIp + ' but is now connecting from ' + ip);
+            }
+            userDetails.lastIp = ip;
+            userDetails.save((err) => {
+                if (err) {
+                    logger.error('Error saving user details ' + err);
+                }
+            });
+
+            if (!activeUsers.hasOwnProperty(username)) {
+                activeUsers[username] = {}
+            }
+            activeUsers[username].allowedRows = userDetails.allowedRows;
             let userData = {username: userDetails.username, allowedRows: userDetails.allowedRows}
 
             res.json(userData);
@@ -316,60 +339,65 @@ app.post('/getProcedures', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
 app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     let username = req.user.username;
     let activePolls = req.body;
-    for (let rowId in activePolls) {
-        if (!activePolls.hasOwnProperty(rowId)) {
-            continue;
-        }
-        let provincePath = activePolls[rowId].provincePath;
-        let procedureCode = activePolls[rowId].procedureCode;
-        let hasProvinceOrProcedureChanged = (iterationResults[username].hasOwnProperty(rowId) && (iterationResults[username][rowId].provincePath !== provincePath || iterationResults[username][rowId].procedureCode !== procedureCode));
-        if (!iterationResults[username].hasOwnProperty(rowId)) {
-            logger.debug('Username ' + username + ' has no iteration results, adding. ' + JSON.stringify(iterationResults));
-            iterationResults[username][rowId] = {
-                provincePath: provincePath,
-                procedureCode: procedureCode,
-                finished: false,
-                offices: []
-            }
-            iterator.refresh(provincePath, procedureCode, rowId, username);
-        } else if (iterationResults[username].hasOwnProperty(rowId) && iterationResults[username][rowId].finished) {
-            logger.debug('Username ' + username + ' has finished iteration results. ' + JSON.stringify(iterationResults));
-            iterationResults[username][rowId] = {
-                provincePath: provincePath,
-                procedureCode: procedureCode,
-                finished: false,
-                offices: hasProvinceOrProcedureChanged ? [] : iterationResults[username][rowId].offices
-            }
-            iterator.refresh(provincePath, procedureCode, rowId, username);
-        } else if (hasProvinceOrProcedureChanged && !iterationResults[username][rowId].finished) {
-            logger.debug('Username ' + username + ' has unfinished iteration results. ' + iterationResults);
-
-            iterationResults[username][rowId] = {
-                provincePath: provincePath,
-                procedureCode: procedureCode,
-                finished: false,
-                offices: []
-            }
-            iterator.refresh(provincePath, procedureCode, rowId, username);
-        }
-    }
-
-    //Check if active polling rows match number of items in the iteration results
-    let iterationResultsKeys = Object.keys(iterationResults[username])
     let activePollsKeys = Object.keys(activePolls);
-    iterationResults[username].lastAccess = new Date();
-    //TODO => Attach session data to user on DB so that is can be restored after reload.
-    // TODO=> Keep daily timer for each user to track how many hours they are using, and reset every day at 00:00. Make mechanism to stop polling after user's number of hours have been consumed. Reform front end to handle going over the limit, with the same modal as the 500 error.
-    //TODO=> Correlate between users to make sure we're not iterating over the same province/procedure combos for different users.
-    if (iterationResultsKeys.length !== activePollsKeys.length) {
-        let difference = iterationResultsKeys.filter(x => !activePollsKeys.includes(x));
-        for (let i = 0; i < difference.length; i++) {
-            delete iterationResults[username][difference[i]];
+
+    if (activePollsKeys.length === activeUsers[username].allowedRows) {
+        for (let rowId in activePolls) {
+            if (!activePolls.hasOwnProperty(rowId)) {
+                continue;
+            }
+            let provincePath = activePolls[rowId].provincePath;
+            let procedureCode = activePolls[rowId].procedureCode;
+            let hasProvinceOrProcedureChanged = (iterationResults[username].hasOwnProperty(rowId) && (iterationResults[username][rowId].provincePath !== provincePath || iterationResults[username][rowId].procedureCode !== procedureCode));
+            if (!iterationResults[username].hasOwnProperty(rowId)) {
+                logger.debug('Username ' + username + ' has no iteration results, adding. ' + JSON.stringify(iterationResults));
+                iterationResults[username][rowId] = {
+                    provincePath: provincePath,
+                    procedureCode: procedureCode,
+                    finished: false,
+                    offices: []
+                }
+                iterator.refresh(provincePath, procedureCode, rowId, username);
+            } else if (iterationResults[username].hasOwnProperty(rowId) && iterationResults[username][rowId].finished) {
+                logger.debug('Username ' + username + ' has finished iteration results. ' + JSON.stringify(iterationResults));
+                iterationResults[username][rowId] = {
+                    provincePath: provincePath,
+                    procedureCode: procedureCode,
+                    finished: false,
+                    offices: hasProvinceOrProcedureChanged ? [] : iterationResults[username][rowId].offices
+                }
+                iterator.refresh(provincePath, procedureCode, rowId, username);
+            } else if (hasProvinceOrProcedureChanged && !iterationResults[username][rowId].finished) {
+                logger.debug('Username ' + username + ' has unfinished iteration results. ' + iterationResults);
+
+                iterationResults[username][rowId] = {
+                    provincePath: provincePath,
+                    procedureCode: procedureCode,
+                    finished: false,
+                    offices: []
+                }
+                iterator.refresh(provincePath, procedureCode, rowId, username);
+            }
         }
+
+        //Check if active polling rows match number of items in the iteration results
+        let iterationResultsKeys = Object.keys(iterationResults[username])
+        iterationResults[username].lastAccess = new Date();
+        //TODO => Attach session data to user on DB so that is can be restored after reload.
+        // TODO=> Keep daily timer for each user to track how many hours they are using, and reset every day at 00:00. Make mechanism to stop polling after user's number of hours have been consumed. Reform front end to handle going over the limit, with the same modal as the 500 error.
+        //TODO=> Correlate between users to make sure we're not iterating over the same province/procedure combos for different users.
+        if (iterationResultsKeys.length !== activePollsKeys.length) {
+            let difference = iterationResultsKeys.filter(keyName => !activePollsKeys.includes(keyName));
+            for (let i = 0; i < difference.length; i++) {
+                delete iterationResults[username][difference[i]];
+            }
+        }
+        let rowsResults = {...iterationResults[username]};
+        delete rowsResults.lastAccess;
+        res.send(rowsResults);
+    } else {
+        res.redirect('/error?info=' + (Buffer.from('Se han recibido más líneas de las que tiene en su subscripción. Por favor póngase en contacto con nosotros si desea utilizar más alertas en paralelo.').toString('base64')));
     }
-    let rowsResults = {...iterationResults[username]};
-    delete rowsResults.lastAccess;
-    res.send(rowsResults);
 
 });
 
