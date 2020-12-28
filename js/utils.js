@@ -1,4 +1,7 @@
 const exec = require('child_process').exec;
+// TODO => Restart server at 7:00 and 19:00. This should also create a report on the logged in time and usage of each user.
+// Use visudo to allow user to run command as root.
+//     exec('sudo reboot now', function(error, stdout, stderr){ ... });
 module.exports = {
     getRandomAlphanumeric: (type, length) => {
         //type 1 is alphanumeric
@@ -53,8 +56,6 @@ module.exports = {
     },
     connectVpn: () => {
         //TODO => Test access with VPN randomization
-        //TODO => Create startup scripts so that PM2 runs the node app on start up.
-        //TODO => Set up twice daily automatic restart for server.
         //
         //IP address randomization over ProtonVPN - Use visudo to allow user to run command as root.
         return new Promise((resolve, reject) => {

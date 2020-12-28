@@ -54,17 +54,7 @@ iterator.init();
 const axios = require('axios');
 
 
-//Garbage collection
-//TODO => Test garbage collection with multiple users.
-//TODO => Set up cron module for all time-related tasks, like user session pruning and automatic log outs.
 
-// setInterval(() => {
-//     for (let user in iterationResults) {
-//         if (iterationResults.hasOwnProperty(user) && ((new Date() - iterationResults[user].lastAccess) > 1800000)) {
-//             delete iterationResults[user];
-//         }
-//     }
-// }, 1800000)
 
 // Express
 
@@ -383,8 +373,6 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
         //Check if active polling rows match number of items in the iteration results
         let iterationResultsKeys = Object.keys(iterationResults[username])
         iterationResults[username].lastAccess = new Date();
-        //TODO => Attach session data to user on DB so that is can be restored after reload.
-        // TODO=> Keep daily timer for each user to track how many hours they are using, and reset every day at 00:00. Make mechanism to stop polling after user's number of hours have been consumed. Reform front end to handle going over the limit, with the same modal as the 500 error.
         //TODO=> Correlate between users to make sure we're not iterating over the same province/procedure combos for different users.
         if (iterationResultsKeys.length !== activePollsKeys.length) {
             let difference = iterationResultsKeys.filter(keyName => !activePollsKeys.includes(keyName));
