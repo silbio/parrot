@@ -5,6 +5,10 @@ body {
     background-repeat: no-repeat;
 }
 
+div#titleBody {
+    display: flex;
+    flex-direction: column;
+}
 
 h1#mainTitle {
     text-align: center;
@@ -13,22 +17,27 @@ h1#mainTitle {
     color: #bada55;
     padding: 20px;
     background: rgba(255, 255, 255, 0.75);
+    display: flex;
+    justify-content: center;
 }
 
-p.titleText{
-    text-align: center;
+p.titleText {
+    justify-content: center;
     font-size: 1em;
     color: black;
     padding: 20px;
     background: rgba(255, 255, 255, 0.75);
     width: 75%;
     margin: 0 auto;
+    display: flex;
 }
+
 h2.errorTitle {
     text-align: center;
     padding: 20px;
     background: rgba(255, 255, 255, 0.75);
 }
+
 h3.errorBody {
     text-align: center;
     padding: 20px;
@@ -69,34 +78,33 @@ h3.errorBody {
 }
 
 #contactBanner {
-     text-align: center;
-     width: 100%;
-     height: 5vh;
-     background: rgba(0, 0, 0, 0.75);
-     color: white;
-     font-size: large;
-     padding: 20px;
+    text-align: center;
+    width: 100%;
+    height: 5vh;
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    font-size: large;
+    padding: 20px;
     position: fixed;
     bottom: 50px;
     left: 0;
- }
+}
 
-#contactBanner a{
+#contactBanner a {
     color: #bada55;
 }
 
 #mainEntry {
     color: white;
     background: black;
-    padding: 1vw;
+    padding: 2vw;
     font-size: xx-large;
-    width: 8vw;
-    height: 4vw;
     text-align: center;
-    line-height: 2;
-    position: fixed;
-    bottom: 50px;
-    left: 45vw;
+    vertical-align: middle;
+    display: flex;
+    margin: 0 auto;
+    min-width: fit-content;
+    min-height: fit-content;
 }
 
 #mainPage {

@@ -331,7 +331,7 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     let activePolls = req.body;
     let activePollsKeys = Object.keys(activePolls);
 
-    if (activePollsKeys.length === activeUsers[username].allowedRows) {
+    if (activePollsKeys.length <= activeUsers[username].allowedRows) {
         for (let rowId in activePolls) {
             if (!activePolls.hasOwnProperty(rowId)) {
                 continue;
