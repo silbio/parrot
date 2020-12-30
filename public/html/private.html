@@ -1,16 +1,11 @@
 <html>
 <head>
-    <title> Private </title>
+    <title> Ajustes </title>
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 
 <body>
-<span id='navAides'>
-    <a href="/controls">Turnos</a>
-    <a href="/logout">Salir</a></span>
-<br/>
-<div class="message-box">
-
+<div id="pageWrapper">
     <form action="/changePassword" method="post" id="changePswForm">
         <div class="title">
             <h2>Cambiar Contraseña</h2>
@@ -22,22 +17,29 @@
         </div>
         <div class="field">
             <label for="newPassword">Nueva Contraseña:</label>
-            <input type="password" name="newPassword" id="newPassword" required autocomplete="new-password" pattern=".{8,}" title="Largo mínimo 8 caracteres"/>
+            <input type="password" name="newPassword" id="newPassword" required autocomplete="new-password"
+                   pattern=".{8,}" title="Largo mínimo 8 caracteres"/>
             <br/>
         </div>
         <div class="field">
             <label for="passwordValidate">Repetir Nueva Contraseña:</label>
-            <input type="password" name="passwordValidate" id="passwordValidate" required autocomplete="new-password" pattern=".{8,}" title="Largo mínimo 8 caracteres"/>
+            <input type="password" name="passwordValidate" id="passwordValidate" required autocomplete="new-password"
+                   pattern=".{8,}" title="Largo mínimo 8 caracteres"/>
         </div>
         <div class="field">
-            <label id="serverMessage"></label>
             <input class="submit-btn" type="submit" value="Submit" required/>
         </div>
-
+        <label id="serverMessage"></label>
     </form>
+    <div id="loginPageSpacer"></div>
+    <aside id="loginPageBanner">
+        <p class="titleText" id="navAides">
+            <a href="/controls"> Volver a Buscador de Citas</a>
+            <br/>
+            <a href="/logout"> Salir</a>
 
-
-
+        </p>
+    </aside>
 </div>
 
 <script src="../js/frontend.js" type="application/javascript"></script>

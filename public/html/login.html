@@ -5,30 +5,47 @@
 </head>
 
 <body>
+<div id="pageWrapper">
+    <form action="/login" method="post" id="loginForm">
+        <div class="title">
+            <h3>Login</h3>
+        </div>
+        <div class="field">
+            <label for="username">Username:</label>
+            <input type="text" name="username" id="username" autocomplete="username"/>
+            <br/>
+        </div>
+        <div class="field">
+            <label for="password">Password:</label>
+            <input type="password" name="password" required id="password" autocomplete="current-password"/>
+        </div>
+        <div class="field">
+            <input class="submit-btn" type="submit" value="Submit" required/>
+        </div>
+        <label id="serverMessage"></label>
+    </form>
+    <div id="loginPageSpacer"></div>
+    <aside id="loginPageBanner">
+        <p class="titleText">
+            ¿Harto de estar rellenando formularios una y otra vez para conseguir una cita previa con las administraciones?
+            ¿Cansado de tener que pagar hasta €100 a mafias extranjeras para poder hacer trámites para sus clientes, sin
+            saber si recibirá una cita y cuanto tiempo tomará?
+        </p>
+        <p class="titleText">
+            ¡No dependa más de terceros!
+        </p>
+        <p class="titleText">
+            Le presentamos a silb.io, un robot que se para en la cola de las administraciones públicas por usted, y le avisa
+            cuando hay citas previas disponibles. Es 100% legal, ya que no toma un recurso público y lo pone a la venta.
+            Silb.io simplemente le permite buscar los trámites que necesita y cuando la administración pone a disposición
+            del público citas, suena la alarma para que usted pueda coger la cita para sus clientes.
+        </p>
+        <p class="titleText" id="contactBanner">
+            Escríbanos a  <a href="mailto:ventas@silb.io"> ventas@silb.io</a>  para recibir más información.
+        </p>
+    </aside>
+</div>
 
-<form action="/login" method="post" id="loginForm">
-    <div class="title">
-        <h3>Login</h3>
-    </div>
-    <div class="field">
-        <label for="username">Username:</label>
-        <input type="text" name="username" id="username" autocomplete="username"/>
-        <br/>
-    </div>
-    <div class="field">
-        <label for="password">Password:</label>
-        <input type="password" name="password" required id="password" autocomplete="current-password"/>
-    </div>
-    <div class="field">
-        <input class="submit-btn" type="submit" value="Submit" required/>
-    </div>
-    <label id="serverMessage"></label>
-</form>
-
-<br/>
-<span id='contactBanner'>
-    ¿No eres cliente? Escríbenos a <a href="mailto:ventas@silb.io">ventas@silb.io</a> para recibir más información.
-</span>
 <script src="../js/frontend.js" type="application/javascript"></script>
 
 </body>

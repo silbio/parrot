@@ -54,8 +54,6 @@ iterator.init();
 const axios = require('axios');
 
 
-
-
 // Express
 
 const express = require('express');
@@ -232,7 +230,7 @@ app.post('/changePassword', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     let passwordValidation = req.body.passwordValidate;
     let errorMessages = {
         'success':
-            Buffer.from('Contraseña Actualizada con éxito').toString('base64'),
+            Buffer.from('Contraseña Actualizada con éxito. Será redirigido al área de citas en unos segundos.').toString('base64'),
         'oldPasswordFail':
             Buffer.from('Contraseña anterior errónea, por favor, inténtelo de nuevo').toString('base64'),
         'noMatch':
@@ -249,7 +247,7 @@ app.post('/changePassword', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
         let userName = req.session.passport.user;
         UserDetails.findOne({username: userName}, (err, userDetails) => {
             userDetails.changePassword(oldPassword, newPassword).then(() => {
-                res.redirect(basePath + errorMessages.success)
+                res.redirect(basePath + errorMessages.success + '&command=' + Buffer.from('passwordChangeSuccess').toString('base64'))
             }).catch((err) => {
                 logger.debug('Change password failure: ' + err);
                 res.redirect(basePath + errorMessages.oldPasswordFail);
@@ -269,8 +267,9 @@ app.get('/user', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
             res.redirect('/error');
         }
         if (userDetails) {
-            if (userDetails.lastIp !== ip) {
-                logger.error('User ' + username + ' used to connect from IP ' + userDetails.lastIp + ' but is now connecting from ' + ip);
+            let isFirstLogin = userDetails.lastIp === '0.0.0.0';
+            if (userDetails.lastIp !== ip && !isFirstLogin) {
+                logger.warning('User ' + username + ' used to connect from IP ' + userDetails.lastIp + ' but is now connecting from ' + ip);
             }
             userDetails.lastIp = ip;
             userDetails.save((err) => {
@@ -284,8 +283,13 @@ app.get('/user', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
             }
             activeUsers[username].allowedRows = userDetails.allowedRows;
             let userData = {username: userDetails.username, allowedRows: userDetails.allowedRows}
+            if (isFirstLogin) {
+                res.redirect('/private?command=' + Buffer.from('firstLogin').toString('base64') +'&info='  + Buffer.from('Por favor, elija una nueva contraseña.').toString('base64'));
+            }
+            else{
+                res.json(userData);
+            }
 
-            res.json(userData);
         }
     })
 
