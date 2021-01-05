@@ -269,7 +269,7 @@ app.get('/user', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
         if (userDetails) {
             let isFirstLogin = userDetails.lastIp === '0.0.0.0';
             if (userDetails.lastIp !== ip && !isFirstLogin) {
-                logger.warning('User ' + username + ' used to connect from IP ' + userDetails.lastIp + ' but is now connecting from ' + ip);
+                logger.warn('User ' + username + ' used to connect from IP ' + userDetails.lastIp + ' but is now connecting from ' + ip);
             }
             userDetails.lastIp = ip;
             userDetails.save((err) => {

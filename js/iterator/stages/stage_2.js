@@ -8,16 +8,36 @@ module.exports = {
                 tomorrow.setDate(tomorrow.getDate() + 1);
                 nextYear.setFullYear(tomorrow.getFullYear() + 1);
                 let randomValues = {
-                    documentType: 'PASAPORTE',
-                    documentNumber: utils.getRandomAlphanumeric(2, 3) + utils.getRandomAlphanumeric(3, 7),
+                    documentNumber: 0,
                     fullName: utils.getRandomNames(),
                     nationality: utils.getRandomCountry(),
                     expirationDate: utils.getRandomDate(tomorrow, nextYear)
                 }
 //Document Type radio
                 new Promise(async (formResolve) => {
-                    let documentType = randomValues.documentType;
-                    await pages[pageId].page.click(`[name="rdbTipoDoc"][value*="${documentType.toLowerCase()}" i]`);
+
+                    let documentType = await pages[pageId].page.evaluate((sel) => {
+                        let elements = Array.from(document.querySelectorAll(sel));
+                        return elements.map(element => {
+                            return element.value;
+                        });
+                    }, '[name="rdbTipoDoc"]');
+
+                    if (documentType.length > 0) {
+                        if(documentType.includes('N.I.E.')){
+                            await pages[pageId].page.click(`[name="rdbTipoDoc"][value="N.I.E."]`);
+                            randomValues.documentNumber = utils.getNieNumber();
+                        }
+                        else if(documentType.includes('PASAPORTE')){
+                            await pages[pageId].page.click(`[name="rdbTipoDoc"][value="PASAPORTE"]`);
+                            randomValues.documentNumber = utils.getRandomAlphanumeric(2, 3) + utils.getRandomAlphanumeric(3, 7);
+                        }
+                        else {
+                            await pages[pageId].page.click(`[name="rdbTipoDoc"][value="I"]`);
+                            randomValues.documentNumber = utils.getNieNumber();
+                        }
+                    }
+
                     // Document Number field
                     await pages[pageId].page.focus('#txtIdCitado');
                     await pages[pageId].page.click('input[id=txtIdCitado]', {clickCount: 3});
@@ -50,6 +70,14 @@ module.exports = {
                     if (await pages[pageId].page.$('#txtAutActual') !== null) {
                         await pages[pageId].page.evaluate(() => {
                             let authSelect = document.getElementById('txtAutActual');
+                            let numberOfOptions = authSelect.childElementCount
+                            let randomOption = Math.floor(Math.random() * (numberOfOptions - 2) + 2);
+                            authSelect.querySelector(`option:nth-child(${randomOption})`).selected = true;
+                        });
+                    }
+                    if (await pages[pageId].page.$('#txtParentesco') !== null) {
+                        await pages[pageId].page.evaluate(() => {
+                            let authSelect = document.getElementById('txtParentesco');
                             let numberOfOptions = authSelect.childElementCount
                             let randomOption = Math.floor(Math.random() * (numberOfOptions - 2) + 2);
                             authSelect.querySelector(`option:nth-child(${randomOption})`).selected = true;

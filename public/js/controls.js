@@ -70,9 +70,10 @@ function populateTableRows(newRow, isRefresh) {
                 newCell.addEventListener('click', function (event) {
                     let isSound = newRow.toggleAttribute('data-sound');
                     if (isSound) {
-                        event.target.innerText = '\uD83D\uDD0A'
+                        event.target.innerText = '\uD83D\uDD0A';
                     } else {
-                        event.target.innerText = '\uD83D\uDD07'
+                        event.target.innerText = '\uD83D\uDD07';
+                        snd.pause();
                     }
                 })
         }
@@ -262,14 +263,14 @@ let assistantProcedureHandler = function () {
     assistant.play('Pleased', 500);
 
     assistant.moveTo(cells.reloadCell.bounds.left - 128, cells.reloadCell.bounds.bottom - 64, 100);
-    assistant.speak('Una vez terminado, utiliza este botón para restaurar la alerta para seleccionar un trámite o provincia diferente.');
+    assistant.speak('Una vez terminado, utiliza este botón para restaurar la alerta y seleccionar un trámite o provincia diferente.');
     assistant.gestureAt(cells.reloadCell.bounds.right, cells.reloadCell.bounds.top);
 
 
     assistant.moveTo((window.innerWidth - 128) / 2, (window.innerHeight - 128) / 2)
     assistant.speak('¡Gracias! Si necesitas más ayuda, por favor, contacta con nosotros.');
     assistant.play('Wave', 2000, function () {
-        helpBtn.click()
+        helpBtn.click();
     });
 }
 
@@ -292,13 +293,11 @@ helpBtn.addEventListener('click', function (e) {
         }).then(function () {
             initTour();
         })
-    } else if (assistant._hidden) {
-        assistant.resume()
-        initTour();
     } else {
         assistant.stop();
         assistant.hide();
         helpBtn.innerText = 'Ayuda';
+        assistant = null;
     }
 
 

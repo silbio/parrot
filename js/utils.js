@@ -18,6 +18,11 @@ module.exports = {
         }
         return result;
     },
+    getNieNumber: function() {
+        let nmb = this.getRandomAlphanumeric(3,7);
+        return "Y"+ nmb + "TRWAGMYFPDXBNJZSQVHLCKET".substr(parseInt(1 + nmb) % 23, 1)
+    },
+
     getRandomNames: () => {
         let names = ['Antonio', 'Manuel', 'Jose', 'Francisco', 'David', 'Juan', 'José Antonio', 'Javier', 'Daniel', 'José Luis', 'Francisco Javier', 'Carlos', 'Jesús', 'Alejandro', 'Miguel', 'José Manuel', 'Rafael', 'Miguel Ángel', 'Pedro', 'Pablo']
         let surnames = ['García', 'Rodríguez', 'González', 'Fernández', 'López', 'Martínez', 'Sánchez', 'Pérez', 'Gómez', 'Martín', 'Jiménez', 'Ruiz', 'Hernández', 'Díaz', 'Moreno', 'Muñoz', 'Álvarez', 'Romero', 'Alonso', 'Gutiérrez']
@@ -104,19 +109,19 @@ module.exports = {
                     window.enableBtn = function () {
                         console.log('enableBtn ran');
 
-                            return true;
+                        return true;
 
 
                     }
                 } else {
                     console.log('enableBtn not on page.');
-                        return true;
+                    return true;
                 }
             }).then(async () => {
 
 
                 await pages[pageId].page.focus('#btnEnviar');
-                await pages[pageId].page.click('#btnEnviar', {clickCount:3, delay: 1000});
+                await pages[pageId].page.click('#btnEnviar', {clickCount: 3, delay: 1000});
                 logger.debug('Enable and click done!')
                 resolve();
             }).catch((err) => {
