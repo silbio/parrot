@@ -18,7 +18,7 @@ if (serverMsg) {
 }
 
 if(serverCmd){
-    let navAides = document.getElementById('navAides');
+    let navAides = document.getElementsByClassName('navAides')[0];
     switch (window.atob(serverCmd)){
         case 'firstLogin':
            navAides.style.display = 'none';

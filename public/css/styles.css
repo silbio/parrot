@@ -88,14 +88,14 @@ h3.errorBody {
     justify-content: flex-end;
 }
 
-#navAides {
+.navAides {
     display: flex;
     margin-bottom: 2vh;
 }
 
 
 
-#navAides a, #navAides button{
+.navAides a, .navAides button{
     color: #bada55;
     background: rgba(0, 0, 0, 0.75);
     padding: 20px;
@@ -107,7 +107,9 @@ h3.errorBody {
     font-size: large;
     font-family: serif;
 }
-
+#closeModal{
+    margin: 100px auto;
+}
 #contactBanner {
     font-size: large;
     background: black;
@@ -201,6 +203,7 @@ td.small button {
     padding: 0;
     width: 100%;
     height: 100%;
+    border:none;
 }
 
 select {
@@ -243,4 +246,32 @@ select {
 div#tableBg {
     background: rgba(255, 255, 255, 0.7);
     min-height: 80vh;
+}
+
+#modal{
+    background: rgba(0,0,0,0.5);
+    color: white;
+    position: absolute;
+    margin: 0;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+}
+
+.modalMsg {
+    display: block;
+    margin-top: 150px;
+    text-align: center;
+}
+
+#firefoxButton{
+    color: white;
+    font-weight: bolder;
+    text-align: center;
+    display: block;
+}
+
+#firefoxButton img{
+    max-width:20%
 }

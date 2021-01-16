@@ -28,11 +28,10 @@ log4js.configure({
             }
         },
         file: {
-            type: 'file',
-            filename: path.join(__dirname, '../logs/' + utils.getTimeStampInLocaLIso() + '.log'),
-            maxLogSize: 2097152,
-            backups: 10,
-            compress: true,
+            type: 'dateFile',
+            filename: path.join(__dirname, '../logs/silb.log'),
+            keepFileExt: true,
+            compress: false,
             layout: {
                 type: 'pattern',
                 pattern: '* %p %d{yyyy/MM/dd-hh.mm.ss} %f:%l %m'
@@ -47,6 +46,8 @@ log4js.configure({
 global.logger = log4js.getLogger();
 logger.level = 'debug';
 
+const reports = require('./reports');
+reports.setUp();
 
 const iterator = require('./iterator');
 iterator.init();
@@ -284,9 +285,8 @@ app.get('/user', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
             activeUsers[username].allowedRows = userDetails.allowedRows;
             let userData = {username: userDetails.username, allowedRows: userDetails.allowedRows}
             if (isFirstLogin) {
-                res.redirect('/private?command=' + Buffer.from('firstLogin').toString('base64') +'&info='  + Buffer.from('Por favor, elija una nueva contraseña.').toString('base64'));
-            }
-            else{
+                res.redirect('/private?command=' + Buffer.from('firstLogin').toString('base64') + '&info=' + Buffer.from('Por favor, elija una nueva contraseña.').toString('base64'));
+            } else {
                 res.json(userData);
             }
 
