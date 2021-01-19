@@ -95,12 +95,12 @@ function clearRow(rowElement) {
 }
 
 function populateWelcomeMessage() {
-    connect(window.location.origin + '/user', null).then(function (response) {
+    connect(window.location.origin + '/user', JSON.stringify({userAgent: navigator.userAgent})).then(function (response) {
         response.json().then(function (parsedResponse) {
             document.getElementById('welcome-message').innerText = `Bienvenido ${parsedResponse.username}`;
             populateTable(parseInt(parsedResponse.allowedRows));
             if (navigator.userAgent.toLowerCase().indexOf('firefox') === -1) {
-                popModal('Debido a Limitaciones en la página web de la administración, a veces la recogida de turnos falla en Chrome y algunas versiones de Intenet Explorer.\n\nRecomendamos el uso del navegador Firefox.')
+                popModal('Debido a Limitaciones en la página web de la administración, a veces la recogida de turnos falla en Chrome y algunas versiones de Intenet Explorer.\n\nRecomendamos el uso del navegador Firefox.', 'browserNotice')
             }
         })
     }).catch(function (err) {

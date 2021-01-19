@@ -80,6 +80,7 @@ h3.errorBody {
     margin: 10px;
     font-size: large;
     max-width: fit-content;
+    background: rgba(255,255,255,0.5);
 }
 
 #controlPageMenu{

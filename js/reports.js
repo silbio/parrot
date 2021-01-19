@@ -2,11 +2,20 @@ const fs = require('fs');
 
 module.exports = {
     setUp: function () {
-        // let CronJob = require('cron').CronJob;
-        // let job = new CronJob('0,30 * * * * *', function() {
-        makeReport('2021-01-05');
-        //     }, null, true, 'Europe/Madrid');
-        //     job.start();
+        return new Promise(resolve => {
+            logger.info('Reporting initialized')
+            let CronJob = require('cron').CronJob;
+            let job = new CronJob('0 48 22 * * *', function() {
+                let d = new Date();
+                d.setDate(d.getDate()-1);
+
+               let yesterday=  (d.getFullYear() + '-' + (('0' + (d.getMonth()+1)).slice(-2)) + '-'+ ('0' + d.getDate()).slice(-2))
+            makeReport(yesterday);
+
+                }, null, true, 'Europe/Madrid');
+                job.start();
+                resolve();
+        })
     }
 }
 
@@ -15,45 +24,89 @@ function makeReport(date) {
         if (err) {
             logger.error('Error generating report for: ' + date + '\nError: ' + err);
         } else {
-            let reportData = {}
+            let reportingGroups = [
+                //System
+                [
+                    //'ServiceStarted':
+                    []
+                ]
+                ,
+                //User
+                [
+                    // 'FailLogin':
+                    [],
+                    // 'SuccessLogin':
+                    [],
+                    // 'NewRegistration':
+                    [],
+                    // 'FailPasswordReset':
+                    [],
+                    // 'SuccessPasswordReset':
+                    [],
+                    // 'IPSwitch':
+                    [],
+                    // 'UserBeginIteratorSession':
+                    [],
+                    // 'UserRequestsIteratorCycle':
+                    [],
+                    // 'UserReceiveIterationResults':
+                    [],
+                    // 'UserLogout':
+                    [],
+                    // 'UserErrorOut':
+                    []
+                ],
+                //Captcha
+                [
+                    // 'CaptchaRequested':
+                    [],
+                    // 'CaptchaReceived':
+                    [],
+                    // 'CaptchaFailed':
+                    []
+                ]
+            ]
             let parsedData = logData.substring(1).split('\n* ');
             parsedData.forEach((logLine, i) => {
-                let regex = /([A-Z]{4,5})\s(\d{4}\/\d{2}\/\d{2}-\d{2}.\d{2}.\d{2})\s(\/.*:\d*)\s(.*)/gs;
-                let matches = regex.exec(logLine);
-                parsedData[i] = {
-                    level: matches[1],
-                    timestamp: matches[2],
-                    origin: matches[3],
-                    message: matches[4]
+                console.log(i);
+                if (logLine.indexOf('~#~') > -1) {
+                    let regex = /([A-Z]{4,5})\s(\d{4}\/\d{2}\/\d{2}-\d{2}.\d{2}.\d{2})\s(\/.*:\d*)\s(\D.*)~#~(\{.*})/gs;
+                    let matches = regex.exec(logLine);
+                    let reportObj = JSON.parse(matches[5]);
+
+                    let currentLineObj = {
+                        level: matches[1],
+                        timestamp: matches[2],
+                        origin: matches[3],
+                        message: matches[4],
+                        reportingGroup: reportObj.reportingGroup,
+                        groupIndex: reportObj.groupIndex
+                    }
+                    if (reportObj.hasOwnProperty('username')) {
+                        currentLineObj.username = reportObj.username;
+
+                    }
+                    if (reportObj.hasOwnProperty('siteKey')) {
+                        currentLineObj.siteKey = reportObj.siteKey
+                    }
+                    if (reportObj.hasOwnProperty('provincePath')) {
+                        currentLineObj.provincePath = reportObj.username
+                    }
+                    if (reportObj.hasOwnProperty('procedureCode')) {
+                        currentLineObj.procedureCode = reportObj.procedureCode
+                    }
+
+                    reportingGroups[reportObj.reportingGroup][reportObj.groupIndex].push(currentLineObj);
                 }
             })
 
-            let filteredData = sortData(parsedData);
 
-            console.log(parsedData);
+
+
+            console.log(reportingGroups);
 
 
         }
     })
 }
 
-function sortData(parsedData) {
-    let sortedData = {};
-    let filters = {
-        inits: 'Init sequence called',
-        userConnections: 'connected from IP',
-        userIterationResultsInit: "has no iteration results"
-    }
-    parsedData.forEach((line) => {
-        for (let key in filters){
-            sortedData[key] = sortedData[key] || [];
-           if(line.message.indexOf(filters[key]) > -1){
-               delete line.level;
-               delete line.origin;
-               sortedData[key].push(line);
-           }
-        }
-    })
-
-    return sortedData;
-}

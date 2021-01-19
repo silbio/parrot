@@ -41,12 +41,11 @@ module.exports = {
             pages[pageId].page.on('console', (msg) => {
                 let msgText = msg.text();
                 if (msgText !== 'Failed to load resource: net::ERR_FAILED') {
-                    logger.debug('Log from page', pageId, msgText);
+                    logger.debug('Log from page ' + 'pageId: ' + pageId + ' msgText: ' + msgText);
                 }
             });
             pages[pageId].page.on('dialog', async dialog => {
                 let clickResult = await dialog.accept();
-                logger.debug('Confirm box: ' + clickResult);
             });
             await pages[pageId].page.setDefaultNavigationTimeout(process.env.NODE_ENV === "development" ? 0 : 20000);
             await pages[pageId].page.setRequestInterception(true);

@@ -1,19 +1,4 @@
 const path = require('path');
-// App modules
-
-const utils = require('./utils');
-utils.connectVpn().then(() => {
-    process.on('exit', () => {
-        utils.disconnectVpn().then((result) => {
-            logger.info(result);
-        }).catch((err) => {
-            logger.error(err);
-        });
-    })
-}).catch((err) => {
-    logger.error(err);
-    process.exit(22);
-})
 
 //TODO => Split init sequence into separate modules
 //Logging
@@ -24,7 +9,12 @@ log4js.configure({
             type: 'console',
             layout: {
                 type: 'pattern',
-                pattern: '%[%d %p%] %f:%l %m'
+                pattern: '%[%d %p%] %f:%l %x{reportingCode}',
+                tokens: {
+                    reportingCode: logEvent => {
+                        return logEvent.data[0] + (logEvent.data.length > 1 ?' ~#~' + JSON.stringify(logEvent.data[1]) : '')
+                    }
+                }
             }
         },
         file: {
@@ -34,7 +24,13 @@ log4js.configure({
             compress: false,
             layout: {
                 type: 'pattern',
-                pattern: '* %p %d{yyyy/MM/dd-hh.mm.ss} %f:%l %m'
+                pattern: '* %p %d{yyyy/MM/dd-hh.mm.ss} %f:%l %x{reportingCode}',
+                tokens: {
+                    reportingCode: logEvent => {
+                        return logEvent.data[0] + (logEvent.data.length > 1 ?' ~#~' + JSON.stringify(logEvent.data[1]) : '')
+                    }
+
+                }
             }
         }
 
@@ -46,11 +42,6 @@ log4js.configure({
 global.logger = log4js.getLogger();
 logger.level = 'debug';
 
-const reports = require('./reports');
-reports.setUp();
-
-const iterator = require('./iterator');
-iterator.init();
 
 const axios = require('axios');
 
@@ -89,8 +80,14 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log('App listening on port ' + port));
+app.listen(port, () => logger.info('SILB started, listening on port ' + port));
 
+//Start iterator and set up reporting
+const iterator = require('./iterator');
+let initIterator = iterator.init();
+const reports = require('./reports');
+let reportSetup = reports.setUp();
+const utils = require('./utils');
 
 //  Passport
 
@@ -127,7 +124,10 @@ passport.use(UserDetails.createStrategy());
 passport.serializeUser(UserDetails.serializeUser());
 passport.deserializeUser(UserDetails.deserializeUser());
 
-
+Promise.all([initIterator, reportSetup])
+{
+    logger.info('System initialized successfully.', {reportingGroup: 0, groupIndex: 0})
+}
 // ROUTES
 //User management routes
 const connectEnsureLogin = require('connect-ensure-login');
@@ -150,6 +150,7 @@ app.post('/login', (req, res, next) => {
                 if (info.name === 'IncorrectPasswordError') {
                     errMsg = 'Nombre de usuario o contraseña incorrecto.'
                 }
+                logger.warn('Failed login attempt. ', {reportingGroup: 1, groupIndex:0, username: req.user.username, });
                 return res.redirect('/login?info=' + Buffer.from(errMsg).toString('base64'),
                 );
             }
@@ -158,7 +159,7 @@ app.post('/login', (req, res, next) => {
                 if (err) {
                     return next(err);
                 }
-
+                logger.info(user.username + ' logged in successfully.', {reportingGroup: 1, groupIndex:1, username: user.username});
                 return res.redirect('/controls');
             });
 
@@ -166,7 +167,10 @@ app.post('/login', (req, res, next) => {
 });
 
 app.get('/error', (req, res) => {
+    logger.warn('User errored out.', {username: req.user.username, reportingGroup: '1', groupIndex:'10'});
+
     req.logout();
+
     res.sendFile('html/error.html', {root: staticRoot});
 });
 
@@ -213,13 +217,13 @@ app.post('/register', connectEnsureLogin.ensureAuthenticated(), (req, res) => {
                 allowedRows: req.body.allowedRows,
                 lastIp: '0.0.0.0'
             }, tempPassword).then((result) => {
-                console.log('Registered ' + result);
+                logger.info('Registered ' + JSON.stringify(result));
                 res.redirect('/register?info=' + Buffer.from(tempPassword).toString('base64'));
             }).catch((err) => {
-                console.error('Registration Error: ' + err);
+                logger.error('Registration Error: ' +JSON.stringify(err));
                 res.redirect('/register?info=' + Buffer.from(err).toString('base64'));
             });
-            logger.warn('Admin ' + userDetails.username + ' registered user ' + req.body.username);
+            logger.warn('Admin ' + userDetails.username + ' registered user ' + req.body.username, {reportingGroup: 1, groupIndex:2, username: userDetails.username});
         } else {
             res.send(401);
         }
@@ -245,12 +249,13 @@ app.post('/changePassword', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
         res.redirect(basePath + errorMessages.samePassword);
     } else if (newPassword === passwordValidation) {
 
-        let userName = req.session.passport.user;
-        UserDetails.findOne({username: userName}, (err, userDetails) => {
+        let username = req.session.passport.user;
+        UserDetails.findOne({username: username}, (err, userDetails) => {
             userDetails.changePassword(oldPassword, newPassword).then(() => {
                 res.redirect(basePath + errorMessages.success + '&command=' + Buffer.from('passwordChangeSuccess').toString('base64'))
+                logger.debug('Change password Success: ' + err, {reportingGroup: 1, groupIndex:4, username: username});
             }).catch((err) => {
-                logger.debug('Change password failure: ' + err);
+                logger.debug('Change password failure: ' + err, {reportingGroup: 1, groupIndex:3, username: username});
                 res.redirect(basePath + errorMessages.oldPasswordFail);
             })
         })
@@ -258,7 +263,7 @@ app.post('/changePassword', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
         res.redirect(basePath + errorMessages.noMatch)
     }
 });
-app.get('/user', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
+app.post('/user', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     let username = req.user.username;
     logger.info("User " + username + " connected from IP " + ip);
@@ -270,7 +275,7 @@ app.get('/user', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
         if (userDetails) {
             let isFirstLogin = userDetails.lastIp === '0.0.0.0';
             if (userDetails.lastIp !== ip && !isFirstLogin) {
-                logger.warn('User ' + username + ' used to connect from IP ' + userDetails.lastIp + ' but is now connecting from ' + ip);
+                logger.warn('User ' + username + ' used to connect from IP ' + userDetails.lastIp + ' but is now connecting from ' + ip, {reportingGroup: 1, groupIndex:5, username: username});
             }
             userDetails.lastIp = ip;
             userDetails.save((err) => {
@@ -296,6 +301,7 @@ app.get('/user', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
 });
 app.get('/logout', (req, res) => {
     connectEnsureLogin.ensureLoggedIn();
+    logger.warn('User Logged Out', {username: req.user.username, reportingGroup: '1', groupIndex:'9'});
     req.logout();
     res.redirect('/');
 });
@@ -306,7 +312,6 @@ app.get('/logout', (req, res) => {
 app.post('/getProcedures', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
 
     let provincePath = req.body.province + '&locale=es';
-    logger.debug(provincePath);
     axios.get('https://sede.administracionespublicas.gob.es' + provincePath)
         .then((proceduresResponse) => {
 
@@ -344,7 +349,7 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
             let procedureCode = activePolls[rowId].procedureCode;
             let hasProvinceOrProcedureChanged = (iterationResults[username].hasOwnProperty(rowId) && (iterationResults[username][rowId].provincePath !== provincePath || iterationResults[username][rowId].procedureCode !== procedureCode));
             if (!iterationResults[username].hasOwnProperty(rowId)) {
-                logger.debug('Username ' + username + ' has no iteration results, adding. ' + JSON.stringify(iterationResults));
+                logger.debug('Username ' + username + ' has no iteration results, adding user to tree. ', {reportingGroup: 1, groupIndex:6, username: username});
                 iterationResults[username][rowId] = {
                     provincePath: provincePath,
                     procedureCode: procedureCode,
@@ -353,7 +358,6 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
                 }
                 iterator.refresh(provincePath, procedureCode, rowId, username);
             } else if (iterationResults[username].hasOwnProperty(rowId) && iterationResults[username][rowId].finished) {
-                logger.debug('Username ' + username + ' has finished iteration results. ' + JSON.stringify(iterationResults));
                 iterationResults[username][rowId] = {
                     provincePath: provincePath,
                     procedureCode: procedureCode,
@@ -362,7 +366,6 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
                 }
                 iterator.refresh(provincePath, procedureCode, rowId, username);
             } else if (hasProvinceOrProcedureChanged && !iterationResults[username][rowId].finished) {
-                logger.debug('Username ' + username + ' has unfinished iteration results. ' + iterationResults);
 
                 iterationResults[username][rowId] = {
                     provincePath: provincePath,

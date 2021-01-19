@@ -1,9 +1,7 @@
-const utils = require('../../utils')
 
 module.exports = {
     async run(pageId, resolve, reject) {
         try {
-
                 pages[pageId].page.$eval('#idSede', (officeSelect) => {
                     let officesString = '';
                     for (let i = 0; i < officeSelect.length; i++) {
@@ -13,7 +11,6 @@ module.exports = {
                         }
                     }
                 }).then((officesString) => {
-                    logger.info('Available offices in Stage 4 success \n' + officesString);
                     pages[pageId].page.goto('about:blank').then(() => {
                         resolve({msg: 'success', offices: officesString});
                     })

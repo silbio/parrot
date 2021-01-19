@@ -23,7 +23,6 @@ module.exports = {
         let nmb = this.getRandomAlphanumeric(3,7);
         return "Y"+ nmb + "TRWAGMYFPDXBNJZSQVHLCKET".substr(parseInt(1 + nmb) % 23, 1)
     },
-
     getRandomNames: () => {
         let names = ['Antonio', 'Manuel', 'Jose', 'Francisco', 'David', 'Juan', 'José Antonio', 'Javier', 'Daniel', 'José Luis', 'Francisco Javier', 'Carlos', 'Jesús', 'Alejandro', 'Miguel', 'José Manuel', 'Rafael', 'Miguel Ángel', 'Pedro', 'Pablo']
         let surnames = ['García', 'Rodríguez', 'González', 'Fernández', 'López', 'Martínez', 'Sánchez', 'Pérez', 'Gómez', 'Martín', 'Jiménez', 'Ruiz', 'Hernández', 'Díaz', 'Moreno', 'Muñoz', 'Álvarez', 'Romero', 'Alonso', 'Gutiérrez']
@@ -60,70 +59,21 @@ module.exports = {
             return false;
         }
     },
-    connectVpn: () => {
-        //TODO => Test access with VPN randomization
-        //
-        //IP address randomization over ProtonVPN - Use visudo to allow user to run command as root.
-        return new Promise((resolve, reject) => {
-            //     let startVPN = exec("sudo protonvpn c -r", function (err, stdout, stderr) {
-            //         if (err) {
-            //             logger.error(stderr);
-            //         }
-            //         console.log(stdout);
-            //     });
-            //
-            //     startVPN.on('exit', async (code) => {
-            //         if (code === 0) {
-            resolve('VPN started successfully.');
-            // } else {
-            //     reject('VPN could not be started, exited with code: ' + code);
-            //
-            // }
-            // });
-        })
-    },
-    disconnectVpn: () => {
-        return new Promise((resolve, reject) => {
-            // let stopVPN = exec("sudo protonvpn d", function (err, stdout, stderr) {
-            //     if (err) {
-            //         logger.error(stderr);
-            //     }
-            //     logger.debug(stdout);
-            // });
-            //
-            // stopVPN.on('exit', (code) => {
-            //     if (code === 0) {
-            resolve('VPN stopped successfully.');
-            //     } else {
-            //         reject('VPN could not be stopped gracefully, exited with code: ' + code);
-            //     }
-            // });
-        });
-    },
     enableAndClick: (pageId) => {
         return new Promise(async (resolve, reject) => {
             pages[pageId].page.evaluate(() => {
                 let sendBtn = document.getElementById('btnEnviar');
-                console.log('Enabling Button! ' + ' Type of enableBtn: ' + typeof window.enableBtn)
                 if (window.hasOwnProperty('enableBtn')) {
                     window.enableBtn();
                     window.enableBtn = function () {
-                        console.log('enableBtn ran');
-
                         return true;
-
-
                     }
                 } else {
-                    console.log('enableBtn not on page.');
                     return true;
                 }
             }).then(async () => {
-
-
                 await pages[pageId].page.focus('#btnEnviar');
                 await pages[pageId].page.click('#btnEnviar', {clickCount: 3, delay: 1000});
-                logger.debug('Enable and click done!')
                 resolve();
             }).catch((err) => {
                 reject(err);

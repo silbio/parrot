@@ -123,13 +123,14 @@ function iterate(pageId, stage, procedureCode = null) {
             let matchesPreviousStageTraits = await utils.checkPageIdTraits(pageId, stageSuccessCriteria[stage - 1].idTraits.selector, stageSuccessCriteria[stage - 1].idTraits.contents);
             let urlMatchesPreviousStage = stageSuccessCriteria[stage - 1].urls.includes(pageUrl);
 
-            logger.debug('stage:' + stage + '/' + (numberOfStages - 1), 'pageId: ' + pageId);
 
 //First option checks for success urls in which the content from the last step is held, usually due to captcha failures.
             //Second option checks if the page was reloaded.
             if (matchesPreviousStageTraits || urlMatchesPreviousStage) {
                 pages[pageId].isReload = true;
                 if (captchaOptions.siteKey) {
+                    logger.info('Captcha Failed, page reloaded.', {reportingGroup: 2, groupIndex:2, siteKey: captchaOptions.siteKey});
+
 //TODO => Change attempt at invisible captcha to simple click, so that it fails and brings up the visible one.
                     captchaControl.reportIncorrect(pageId);
                     await captchaControl.request(pageId, captchaOptions).catch((err) => {
@@ -187,7 +188,6 @@ function iterate(pageId, stage, procedureCode = null) {
 
                 }
             } else {
-
                 logger.debug('Unsuccessful finish: ' + pageId);
                 if (stage > 4) {
                     logger.info('HAR File recorded for pageId: ' + pageId);

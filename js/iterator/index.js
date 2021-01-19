@@ -12,19 +12,21 @@ const pageMaker = require('./pageMaker');
 
 //Initialize
 async function init() {
-    logger.info('Init sequence called.');
-    global.pages = {};
-    global.browser = await puppeteer.launch(
-        {
-            headless: process.env.NODE_ENV !== 'development',
-            args: [
-                `--user-agent=${userAgentString}`
-            ]
-        }
-    );
-    global.iterationResults = {};
-    global.activeUsers = {};
-    logger.debug('iterationResults initialized. ' + JSON.stringify(iterationResults) );
+    return new Promise(async resolve => {
+        logger.info('Iterator initialized.');
+        global.pages = {};
+        global.browser = await puppeteer.launch(
+            {
+                headless: process.env.NODE_ENV !== 'development',
+                args: [
+                    `--user-agent=${userAgentString}`
+                ]
+            }
+        );
+        global.iterationResults = {};
+        global.activeUsers = {};
+        resolve();
+    })
 }
 
 
@@ -32,20 +34,20 @@ async function refresh(provincePath, procedureCode, rowId, username) {
     let pageId = await uuidv4();
     pages[pageId] = pages[pageId] || {}
     pages[pageId].rowId = rowId;
+    logger.info(username + ' has requested a new Iterator Cycle', {username: username, reportingGroup: '1', groupIndex:'7', provincePath: provincePath, procedureCode: procedureCode});
     pageMaker.run(pageId, provincePath, procedureCode, userAgentString)
         .then((resolution) => {
-            logger.info(resolution);
+            logger.info(JSON.stringify(resolution), {username: username, reportingGroup: '1', groupIndex:'8',provincePath: provincePath, procedureCode: procedureCode, success:resolution.offices.length > 0});
             iterationResults[username][rowId].provincePath = provincePath;
             iterationResults[username][rowId].procedureCode = procedureCode;
             iterationResults[username][rowId].offices = resolution.offices;
             iterationResults[username][rowId].finished = true;
-            logger.info('returning Iteration result');
             pages[pageId].page.goto('about:blank').then(() => {
                 pages[pageId].page.close();
             })
 
         }).catch(err => {
-        logger.warn(err);
+        logger.warn(JSON.stringify(err));
         iterationResults[username][rowId].finished = true;
         pages[pageId].page.goto('about:blank').then(() => {
             pages[pageId].page.close();

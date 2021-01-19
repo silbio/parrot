@@ -18,7 +18,6 @@ module.exports = {
                 }
                 return captchaAttributes;
             }).then((options) => {
-                logger.debug( options.siteKey ? (options.isInvisible ? 'Inv' : 'V') + 'isible Captcha siteKey ' + options.siteKey  : 'No Captcha detected on this URL')
                 resolve(options);
             })
         }))
@@ -26,7 +25,7 @@ module.exports = {
     },
     request: (pageId, options) => {
         return new Promise((resolve, reject) => {
-            logger.debug('Captcha for pageId: ' + pageId + ' requested.');
+            logger.debug('Captcha for pageId: ' + pageId + ' requested.', {reportingGroup: 2, groupIndex:0, siteKey: options.siteKey, username: pages[pageId].username});
             if (resolvedCaptchas[pageId] || resolvingCaptchas.includes(pageId)) {
                 resolve(resolvedCaptchas[pageId]);
             } else {
@@ -46,12 +45,11 @@ module.exports = {
                         let taskId = response.data.taskId
                         let errorId = response.data.errorId;
                         if (taskId) {
-                            logger.debug('Captcha service for task Id: ' + taskId + ' for pageId ' + pageId);
                             pages[pageId].taskId = taskId;
                             new Promise((pollResolve, pollReject) => {
-                                logger.debug('Polling for captcha solution started for pageId ' + pageId);
-                                pollTask(taskId, 0, pollResolve, pollReject, pageId)
+                                pollTask(taskId, 0, pollResolve, pollReject, pageId, options)
                             }).then((solvedCaptcha) => {
+                                logger.info('Captcha solution received.', {reportingGroup: 2, groupIndex:1, siteKey: options.siteKey, username: pages[pageId].username});
                                 let resolvedCaptchaIndex = resolvingCaptchas.indexOf(pageId);
                                 resolvingCaptchas.splice(resolvedCaptchaIndex, 1);
                                 resolvedCaptchas[pageId] = {
@@ -95,7 +93,6 @@ module.exports = {
         return new Promise(async (resolve) => {
             await pages[pageId].page.waitForFunction((code) => {
                 let captchaTextArea = document.getElementById('g-recaptcha-response');
-                console.log('Filling field ' + captchaTextArea.id + ' with code ' + code);
                 captchaTextArea.innerText = code;
                 return true;
             }, {}, captchaCode);
@@ -130,12 +127,9 @@ function pollTask(taskId, attempt, resolve, reject, pageId) {
         let gRecaptchaStatus = taskResponse.data.status
 
         if (gRecaptchaStatus === 'ready') {
-            logger.debug('reCaptcha solution for ' + pageId + ' ready.')
             resolve(taskResponse.data.solution.gRecaptchaResponse);
         } else if (attempt > 30) {
-            reject('Too many polling tries for pageId: ' + pageId);
-        } else {
-            logger.debug(attempt + ' attempts to poll for pageId: ' + pageId);
+            } else {
             attempt++;
             setTimeout(() => {
                 pollTask(taskId, attempt, resolve, reject, pageId);
