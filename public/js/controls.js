@@ -99,8 +99,9 @@ function populateWelcomeMessage() {
         response.json().then(function (parsedResponse) {
             document.getElementById('welcome-message').innerText = `Bienvenido ${parsedResponse.username}`;
             populateTable(parseInt(parsedResponse.allowedRows));
-            if (navigator.userAgent.toLowerCase().indexOf('firefox') === -1) {
-                popModal('Debido a Limitaciones en la página web de la administración, a veces la recogida de turnos falla en Chrome y algunas versiones de Intenet Explorer.\n\nRecomendamos el uso del navegador Firefox.', 'browserNotice')
+            if (navigator.userAgent.toLowerCase().indexOf('firefox') === -1   && window.sessionStorage.getItem('FFAdvisoryShown') !== 'true'){
+                window.sessionStorage.setItem('FFAdvisoryShown', 'true');
+                popModal('Debido a Limitaciones en la página web de la administración, a veces la recogida de turnos falla en Chrome y algunas versiones de Internet Explorer.\n\nRecomendamos el uso del navegador Firefox.', 'browserNotice')
             }
         })
     }).catch(function (err) {
@@ -228,6 +229,7 @@ function popModal(msg, type) {
     if (type === 'browserNotice') {
         let ffLink = document.createElement('a');
         ffLink.href = 'https://www.mozilla.org/en-GB/firefox/download/thanks/';
+        ffLink.target = '_blank'
         ffLink.id = 'firefoxButton'
         let ffImg = document.createElement('img');
         ffImg.src = '/img/firefox_icon.png';

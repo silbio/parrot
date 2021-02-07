@@ -1,6 +1,6 @@
 {
   "name": "silb",
-  "version": "2.1.7",
+  "version": "2.1.8",
   "description": "Sends an alert when queue reaches end",
   "private": true,
   "license": "UNLICENSED",
@@ -17,13 +17,13 @@
     "start": "NODE_ENV=production node js/index.js"
   },
   "dependencies": {
-    "axios": "^0.21.0",
+    "axios": "^0.21.1",
     "body-parser": "^1.19.0",
     "connect-ensure-login": "^0.1.1",
     "cron": "^1.8.2",
     "express": "^4.17.1",
     "express-healthcheck": "^0.1.0",
-    "express-session": "^1.17.1",
+    "express-session": "^sudo systemctl enable mongod1.17.1",
     "memorystore": "^1.6.4",
     "mongoose": "^5.10.14",
     "passport": "^0.4.1",

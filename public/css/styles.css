@@ -3,6 +3,7 @@ body {
     background-position: bottom;
     background-size: cover;
     background-repeat: no-repeat;
+    height:100%;
 }
 
 div#titleBody {

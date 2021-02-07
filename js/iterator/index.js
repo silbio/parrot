@@ -20,7 +20,8 @@ async function init() {
                 headless: process.env.NODE_ENV !== 'development',
                 args: [
                     `--user-agent=${userAgentString}`
-                ]
+                ],
+                executablePath: "/snap/bin/chromium"
             }
         );
         global.iterationResults = {};
@@ -34,24 +35,46 @@ async function refresh(provincePath, procedureCode, rowId, username) {
     let pageId = await uuidv4();
     pages[pageId] = pages[pageId] || {}
     pages[pageId].rowId = rowId;
-    logger.info(username + ' has requested a new Iterator Cycle', {username: username, reportingGroup: '1', groupIndex:'7', provincePath: provincePath, procedureCode: procedureCode});
+    logger.info(username + ' has requested a new Iterator Cycle', {
+        username: username,
+        reportingGroup: 1,
+        groupIndex: 7,
+        provincePath: provincePath,
+        procedureCode: procedureCode
+    });
     pageMaker.run(pageId, provincePath, procedureCode, userAgentString)
         .then((resolution) => {
-            logger.info(JSON.stringify(resolution), {username: username, reportingGroup: '1', groupIndex:'8',provincePath: provincePath, procedureCode: procedureCode, success:resolution.offices.length > 0});
+            logger.info(JSON.stringify(resolution), {
+                username: username,
+                reportingGroup: 1,
+                groupIndex: 8,
+                provincePath: provincePath,
+                procedureCode: procedureCode
+            });
+
+            if(resolution.offices.length > 0) {
+                logger.info('Successful Iteration', {
+                    username: username,
+                    reportingGroup: 1,
+                    groupIndex: 9,
+                    provincePath: provincePath,
+                    procedureCode: procedureCode
+                })
+            }
             iterationResults[username][rowId].provincePath = provincePath;
             iterationResults[username][rowId].procedureCode = procedureCode;
             iterationResults[username][rowId].offices = resolution.offices;
             iterationResults[username][rowId].finished = true;
-            pages[pageId].page.goto('about:blank').then(() => {
-                pages[pageId].page.close();
-            })
+            // pages[pageId].page.goto('about:blank').then(() => {
+            //     pages[pageId].page.close();
+            // })
 
         }).catch(err => {
         logger.warn(JSON.stringify(err));
         iterationResults[username][rowId].finished = true;
-        pages[pageId].page.goto('about:blank').then(() => {
-            pages[pageId].page.close();
-        });
+        // pages[pageId].page.goto('about:blank').then(() => {
+        //     pages[pageId].page.close();
+        // });
     });
 }
 

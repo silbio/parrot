@@ -12,7 +12,7 @@ log4js.configure({
                 pattern: '%[%d %p%] %f:%l %x{reportingCode}',
                 tokens: {
                     reportingCode: logEvent => {
-                        return logEvent.data[0] + (logEvent.data.length > 1 ?' ~#~' + JSON.stringify(logEvent.data[1]) : '')
+                        return logEvent.data[0] + (logEvent.data.length > 1 ? ' ~#~' + JSON.stringify(logEvent.data[1]) : '')
                     }
                 }
             }
@@ -27,7 +27,7 @@ log4js.configure({
                 pattern: '* %p %d{yyyy/MM/dd-hh.mm.ss} %f:%l %x{reportingCode}',
                 tokens: {
                     reportingCode: logEvent => {
-                        return logEvent.data[0] + (logEvent.data.length > 1 ?' ~#~' + JSON.stringify(logEvent.data[1]) : '')
+                        return logEvent.data[0] + (logEvent.data.length > 1 ? ' ~#~' + JSON.stringify(logEvent.data[1]) : '')
                     }
 
                 }
@@ -82,11 +82,10 @@ app.use(bodyParser.urlencoded({extended: true}));
 const port = process.env.PORT || 3000;
 app.listen(port, () => logger.info('SILB started, listening on port ' + port));
 
-//Start iterator and set up reporting
+//Start iterator
 const iterator = require('./iterator');
 let initIterator = iterator.init();
-const reports = require('./reports');
-let reportSetup = reports.setUp();
+
 const utils = require('./utils');
 
 //  Passport
@@ -124,7 +123,7 @@ passport.use(UserDetails.createStrategy());
 passport.serializeUser(UserDetails.serializeUser());
 passport.deserializeUser(UserDetails.deserializeUser());
 
-Promise.all([initIterator, reportSetup])
+initIterator.then()
 {
     logger.info('System initialized successfully.', {reportingGroup: 0, groupIndex: 0})
 }
@@ -150,7 +149,7 @@ app.post('/login', (req, res, next) => {
                 if (info.name === 'IncorrectPasswordError') {
                     errMsg = 'Nombre de usuario o contraseña incorrecto.'
                 }
-                logger.warn('Failed login attempt. ', {reportingGroup: 1, groupIndex:0, username: req.user.username, });
+                logger.warn('Failed login attempt. ', {reportingGroup: 1, groupIndex: 0, username: req.body.username,});
                 return res.redirect('/login?info=' + Buffer.from(errMsg).toString('base64'),
                 );
             }
@@ -159,7 +158,11 @@ app.post('/login', (req, res, next) => {
                 if (err) {
                     return next(err);
                 }
-                logger.info(user.username + ' logged in successfully.', {reportingGroup: 1, groupIndex:1, username: user.username});
+                logger.info(user.username + ' logged in successfully.', {
+                    reportingGroup: 1,
+                    groupIndex: 1,
+                    username: user.username
+                });
                 return res.redirect('/controls');
             });
 
@@ -167,7 +170,7 @@ app.post('/login', (req, res, next) => {
 });
 
 app.get('/error', (req, res) => {
-    logger.warn('User errored out.', {username: req.user.username, reportingGroup: '1', groupIndex:'10'});
+    logger.warn('User errored out.', {username: req.user.username, reportingGroup: 1, groupIndex: 11});
 
     req.logout();
 
@@ -220,15 +223,43 @@ app.post('/register', connectEnsureLogin.ensureAuthenticated(), (req, res) => {
                 logger.info('Registered ' + JSON.stringify(result));
                 res.redirect('/register?info=' + Buffer.from(tempPassword).toString('base64'));
             }).catch((err) => {
-                logger.error('Registration Error: ' +JSON.stringify(err));
+                logger.error('Registration Error: ' + JSON.stringify(err));
                 res.redirect('/register?info=' + Buffer.from(err).toString('base64'));
             });
-            logger.warn('Admin ' + userDetails.username + ' registered user ' + req.body.username, {reportingGroup: 1, groupIndex:2, username: userDetails.username});
+            logger.warn('Admin ' + userDetails.username + ' registered user ' + req.body.username, {
+                reportingGroup: 1,
+                groupIndex: 2,
+                username: userDetails.username
+            });
         } else {
             res.send(401);
         }
     })
 })
+
+
+const reports = require('./reports');
+
+app.get('/reports', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
+    let userName = req.session.passport.user;
+    UserDetails.findOne({username: userName}, (err, userDetails) => {
+        logger.warn(userDetails.username + ' accessed the reports page.');
+        if (userDetails.admin) {
+            let date = req.query.date;
+            reports.make(date).then((reportPath) => {
+                res.sendFile(reportPath)
+            }).catch((err) => {
+                res.send(err)
+            });
+        } else {
+            res.send(401);
+        }
+    })
+
+
+});
+
+
 app.post('/changePassword', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
     let oldPassword = req.body.oldPassword;
     let newPassword = req.body.newPassword;
@@ -253,9 +284,9 @@ app.post('/changePassword', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
         UserDetails.findOne({username: username}, (err, userDetails) => {
             userDetails.changePassword(oldPassword, newPassword).then(() => {
                 res.redirect(basePath + errorMessages.success + '&command=' + Buffer.from('passwordChangeSuccess').toString('base64'))
-                logger.debug('Change password Success: ' + err, {reportingGroup: 1, groupIndex:4, username: username});
+                logger.debug('Change password Success: ' + err, {reportingGroup: 1, groupIndex: 4, username: username});
             }).catch((err) => {
-                logger.debug('Change password failure: ' + err, {reportingGroup: 1, groupIndex:3, username: username});
+                logger.debug('Change password failure: ' + err, {reportingGroup: 1, groupIndex: 3, username: username});
                 res.redirect(basePath + errorMessages.oldPasswordFail);
             })
         })
@@ -275,7 +306,11 @@ app.post('/user', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
         if (userDetails) {
             let isFirstLogin = userDetails.lastIp === '0.0.0.0';
             if (userDetails.lastIp !== ip && !isFirstLogin) {
-                logger.warn('User ' + username + ' used to connect from IP ' + userDetails.lastIp + ' but is now connecting from ' + ip, {reportingGroup: 1, groupIndex:5, username: username});
+                logger.warn('User ' + username + ' used to connect from IP ' + userDetails.lastIp + ' but is now connecting from ' + ip, {
+                    reportingGroup: 1,
+                    groupIndex: 5,
+                    username: username
+                });
             }
             userDetails.lastIp = ip;
             userDetails.save((err) => {
@@ -301,7 +336,7 @@ app.post('/user', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
 });
 app.get('/logout', (req, res) => {
     connectEnsureLogin.ensureLoggedIn();
-    logger.warn('User Logged Out', {username: req.user.username, reportingGroup: '1', groupIndex:'9'});
+    logger.warn('User Logged Out', {username: req.user.username, reportingGroup: 1, groupIndex:10});
     req.logout();
     res.redirect('/');
 });
@@ -349,7 +384,11 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
             let procedureCode = activePolls[rowId].procedureCode;
             let hasProvinceOrProcedureChanged = (iterationResults[username].hasOwnProperty(rowId) && (iterationResults[username][rowId].provincePath !== provincePath || iterationResults[username][rowId].procedureCode !== procedureCode));
             if (!iterationResults[username].hasOwnProperty(rowId)) {
-                logger.debug('Username ' + username + ' has no iteration results, adding user to tree. ', {reportingGroup: 1, groupIndex:6, username: username});
+                logger.debug('Username ' + username + ' has no iteration results, adding user to tree. ', {
+                    reportingGroup: 1,
+                    groupIndex: 6,
+                    username: username
+                });
                 iterationResults[username][rowId] = {
                     provincePath: provincePath,
                     procedureCode: procedureCode,

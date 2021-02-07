@@ -25,7 +25,7 @@ module.exports = {
     },
     request: (pageId, options) => {
         return new Promise((resolve, reject) => {
-            logger.debug('Captcha for pageId: ' + pageId + ' requested.', {reportingGroup: 2, groupIndex:0, siteKey: options.siteKey, username: pages[pageId].username});
+            logger.debug('Captcha for pageId: ' + pageId + ' requested.', {reportingGroup: 0, groupIndex:1, siteKey: options.siteKey, username: pages[pageId].username});
             if (resolvedCaptchas[pageId] || resolvingCaptchas.includes(pageId)) {
                 resolve(resolvedCaptchas[pageId]);
             } else {
@@ -49,7 +49,7 @@ module.exports = {
                             new Promise((pollResolve, pollReject) => {
                                 pollTask(taskId, 0, pollResolve, pollReject, pageId, options)
                             }).then((solvedCaptcha) => {
-                                logger.info('Captcha solution received.', {reportingGroup: 2, groupIndex:1, siteKey: options.siteKey, username: pages[pageId].username});
+                                logger.info('Captcha solution received.', {reportingGroup: 0, groupIndex:2, siteKey: options.siteKey, username: pages[pageId].username});
                                 let resolvedCaptchaIndex = resolvingCaptchas.indexOf(pageId);
                                 resolvingCaptchas.splice(resolvedCaptchaIndex, 1);
                                 resolvedCaptchas[pageId] = {

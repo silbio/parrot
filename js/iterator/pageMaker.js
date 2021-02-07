@@ -8,7 +8,7 @@ module.exports = {
             let context = await browser.createIncognitoBrowserContext();
             pages[pageId].page =  await context.newPage();
             pages[pageId].har = new PuppeteerHar(pages[pageId].page);
-            await pages[pageId].har.start({path: './logs/hars/' + utils.getTimeStampInLocaLIso() + '_' + pageId + '_.har'});
+            await pages[pageId].har.start({path: './logs/hars/' + utils.getTimeStampInLocaLIso() + '_' + pageId + '.har'});
             logger.info('pageId ' + pageId + ' assigned to ' + provincePath + ' - ' + procedureName);
 
             //Change user agent

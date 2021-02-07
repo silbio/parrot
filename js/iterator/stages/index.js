@@ -129,7 +129,7 @@ function iterate(pageId, stage, procedureCode = null) {
             if (matchesPreviousStageTraits || urlMatchesPreviousStage) {
                 pages[pageId].isReload = true;
                 if (captchaOptions.siteKey) {
-                    logger.info('Captcha Failed, page reloaded.', {reportingGroup: 2, groupIndex:2, siteKey: captchaOptions.siteKey});
+                    logger.info('Captcha Failed, page reloaded.', {reportingGroup: 0, groupIndex:3, siteKey: captchaOptions.siteKey});
 
 //TODO => Change attempt at invisible captcha to simple click, so that it fails and brings up the visible one.
                     captchaControl.reportIncorrect(pageId);
@@ -164,7 +164,7 @@ function iterate(pageId, stage, procedureCode = null) {
                     if (captchaOptions.siteKey) {
 
                         await captchaControl.request(pageId, captchaOptions).catch((err) => {
-                            logger.error(err);
+                            logger.error(JSON.stringify(err));
                             pageMakerPromises[pageId].reject(
                                 {
                                     message: err.message,
@@ -189,7 +189,9 @@ function iterate(pageId, stage, procedureCode = null) {
                 }
             } else {
                 logger.debug('Unsuccessful finish: ' + pageId);
-                if (stage > 4) {
+                if (stage >= 3) {
+                    await pages[pageId].page.screenshot({path: 'logs/screenshots/fail-' + utils.getTimeStampInLocaLIso() + pageId + '.png',
+                        fullPage: true});
                     logger.info('HAR File recorded for pageId: ' + pageId);
                     await pages[pageId].har.stop();
                 }
