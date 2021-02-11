@@ -1,6 +1,6 @@
 {
   "name": "silb",
-  "version": "2.1.8",
+  "version": "2.1.9",
   "description": "Sends an alert when queue reaches end",
   "private": true,
   "license": "UNLICENSED",

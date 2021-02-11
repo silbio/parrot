@@ -16,14 +16,21 @@ async function init() {
         logger.info('Iterator initialized.');
 
         global.pages = {};
+
+        let browserOptions = {
+
+            args: [
+                `--user-agent=${userAgentString}`
+            ],
+
+        }
+        if (process.env.NODE_ENV === 'development') {
+            browserOptions.headless = false;
+            browserOptions.executablePath = '/usr/bin/google-chrome-stable';
+        }
+
         global.browser = await puppeteer.launch(
-            {
-                headless: process.env.NODE_ENV !== 'development',
-                args: [
-                    `--user-agent=${userAgentString}`
-                ],
-                executablePath:'/usr/bin/google-chrome-stable'
-            }
+            browserOptions
         );
         global.iterationResults = {};
         global.activeUsers = {};
@@ -53,7 +60,7 @@ async function refresh(provincePath, procedureCode, rowId, username) {
                 procedureCode: procedureCode
             });
 
-            if(resolution.offices.length > 0) {
+            if (resolution.offices.length > 0) {
                 logger.info('Successful Iteration', {
                     username: username,
                     reportingGroup: 1,
