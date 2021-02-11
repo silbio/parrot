@@ -7,7 +7,7 @@ module.exports = {
     detect: (pageId) => {
         return new Promise(((resolve) => {
             pages[pageId].page.evaluate(() => {
-                let captchaAttributes = {siteKey: '', isInvisible: null};
+                let captchaAttributes = {siteKey: '', isInvisible: null, url: window.location.href};
 
                 if (document.querySelectorAll('[data-sitekey]').length > 0) {
                     captchaAttributes.siteKey = document.querySelectorAll('[data-sitekey]')[0].dataset.sitekey;
@@ -33,11 +33,9 @@ module.exports = {
                     'clientKey': antiCaptchaClientKey,
                     'task':
                         {
-                            'type': 'NoCaptchaTaskProxyless',
-                            'websiteURL': 'https://sede.administracionespublicas.gob.es',
-                            'websiteKey': options.siteKey,
-                            'isInvisible': options.isInvisible
-
+                            'type': 'RecaptchaV2TaskProxyless',
+                            'websiteURL': options.url,
+                            'websiteKey': options.siteKey
                         }
                 })
                     .then((response) => {

@@ -14,6 +14,7 @@ const pageMaker = require('./pageMaker');
 async function init() {
     return new Promise(async resolve => {
         logger.info('Iterator initialized.');
+
         global.pages = {};
         global.browser = await puppeteer.launch(
             {
@@ -21,7 +22,7 @@ async function init() {
                 args: [
                     `--user-agent=${userAgentString}`
                 ],
-                executablePath: "/snap/bin/chromium"
+                executablePath:'/usr/bin/google-chrome-stable'
             }
         );
         global.iterationResults = {};
@@ -65,16 +66,16 @@ async function refresh(provincePath, procedureCode, rowId, username) {
             iterationResults[username][rowId].procedureCode = procedureCode;
             iterationResults[username][rowId].offices = resolution.offices;
             iterationResults[username][rowId].finished = true;
-            // pages[pageId].page.goto('about:blank').then(() => {
-            //     pages[pageId].page.close();
-            // })
+            pages[pageId].page.goto('about:blank').then(() => {
+                pages[pageId].page.close();
+            })
 
         }).catch(err => {
         logger.warn(JSON.stringify(err));
         iterationResults[username][rowId].finished = true;
-        // pages[pageId].page.goto('about:blank').then(() => {
-        //     pages[pageId].page.close();
-        // });
+        pages[pageId].page.goto('about:blank').then(() => {
+            pages[pageId].page.close();
+        });
     });
 }
 

@@ -131,7 +131,7 @@ function iterate(pageId, stage, procedureCode = null) {
                 if (captchaOptions.siteKey) {
                     logger.info('Captcha Failed, page reloaded.', {reportingGroup: 0, groupIndex:3, siteKey: captchaOptions.siteKey});
 
-//TODO => Change attempt at invisible captcha to simple click, so that it fails and brings up the visible one.
+
                     captchaControl.reportIncorrect(pageId);
                     await captchaControl.request(pageId, captchaOptions).catch((err) => {
                         logger.error(err);

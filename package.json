@@ -23,19 +23,19 @@
     "cron": "^1.8.2",
     "express": "^4.17.1",
     "express-healthcheck": "^0.1.0",
-    "express-session": "^sudo systemctl enable mongod1.17.1",
+    "express-session": "^1.17.1",
     "memorystore": "^1.6.4",
     "mongoose": "^5.10.14",
     "passport": "^0.4.1",
     "passport-local-mongoose": "^6.0.1",
-    "puppeteer": "^5.5.0",
+    "puppeteer-core": "^7.0.1",
     "puppeteer-extra": "^3.1.15",
     "puppeteer-extra-plugin-stealth": "^2.6.1",
     "serve-favicon": "^2.5.0",
     "uuid": "^8.3.0"
   },
   "devDependencies": {
-    "puppeteer-har": "^1.1.2",
-    "log4js": "^6.3.0"
+    "log4js": "^6.3.0",
+    "puppeteer-har": "^1.1.2"
   }
 }
