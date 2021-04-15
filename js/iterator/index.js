@@ -18,7 +18,6 @@ async function init() {
         global.pages = {};
 
         let browserOptions = {
-
             args: [
                 `--user-agent=${userAgentString}`
             ],
@@ -28,6 +27,10 @@ async function init() {
             browserOptions.headless = false;
             browserOptions.executablePath = '/usr/bin/google-chrome-stable';
         }
+        else{
+            browserOptions.executablePath = '/usr/bin/google-chrome';
+        }
+
 
         global.browser = await puppeteer.launch(
             browserOptions

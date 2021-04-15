@@ -189,7 +189,7 @@ function iterate(pageId, stage, procedureCode = null) {
                 }
             } else {
                 logger.debug('Unsuccessful finish: ' + pageId);
-                if (stage >= 3) {
+                if (stage >= 3 && process.env.NODE_ENV === 'development') {
                     await pages[pageId].page.screenshot({path: 'logs/screenshots/fail-' + utils.getTimeStampInLocaLIso() + pageId + '.png',
                         fullPage: true});
                     logger.info('HAR File recorded for pageId: ' + pageId);

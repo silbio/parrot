@@ -1,46 +1,10 @@
 const path = require('path');
+require(path.join(__dirname +'/logger'));
+const vpnCtrl = require(path.join(__dirname +'/vpnCtrl.js'))
 
+vpnCtrl.connectVpn().then( (async()=>{
 //TODO => Split init sequence into separate modules
-//Logging
-const log4js = require("log4js");
-log4js.configure({
-    appenders: {
-        console: {
-            type: 'console',
-            layout: {
-                type: 'pattern',
-                pattern: '%[%d %p%] %f:%l %x{reportingCode}',
-                tokens: {
-                    reportingCode: logEvent => {
-                        return logEvent.data[0] + (logEvent.data.length > 1 ? ' ~#~' + JSON.stringify(logEvent.data[1]) : '')
-                    }
-                }
-            }
-        },
-        file: {
-            type: 'dateFile',
-            filename: path.join(__dirname, '../logs/silb.log'),
-            keepFileExt: true,
-            compress: false,
-            layout: {
-                type: 'pattern',
-                pattern: '* %p %d{yyyy/MM/dd-hh.mm.ss} %f:%l %x{reportingCode}',
-                tokens: {
-                    reportingCode: logEvent => {
-                        return logEvent.data[0] + (logEvent.data.length > 1 ? ' ~#~' + JSON.stringify(logEvent.data[1]) : '')
-                    }
 
-                }
-            }
-        }
-
-    },
-    categories: {
-        default: {appenders: ['console', 'file'], level: 'debug', enableCallStack: true}
-    }
-});
-global.logger = log4js.getLogger();
-logger.level = 'debug';
 
 
 const axios = require('axios');
@@ -80,7 +44,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => logger.info('SILB started, listening on port ' + port));
+app.listen(port, () => {
+    logger.info('SILB started, listening on port ' + port)
+
+});
+
 
 //Start iterator
 const iterator = require('./iterator');
@@ -437,3 +405,4 @@ app.post('/pollStatus', connectEnsureLogin.ensureLoggedIn(), (req, res) => {
 
 
 
+}))

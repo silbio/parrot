@@ -1,4 +1,4 @@
-const exec = require('child_process').exec;
+
 // TODO => Restart server at 7:00 and 19:00. This should also create a report on the logged in time and IP change alerts for each user.
 // Use visudo to allow user to run command as root.
 //     exec('sudo reboot now', function(error, stdout, stderr){ ... });
